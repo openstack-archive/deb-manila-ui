@@ -1,0 +1,65 @@
+Source: manila-ui
+Section: python
+Priority: extra
+Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
+Uploaders: Thomas Goirand <zigo@debian.org>,
+           ,
+Build-Depends: debhelper (>= 9),
+               dh-python,
+               openstack-pkg-tools,
+               python-all,
+               python-pbr,
+               python-setuptools,
+               python-sphinx,
+Build-Depends-Indep: openstack-dashboard (>= 2015.1~b3),
+                     python-babel,
+                     python-compressor,
+                     python-coverage,
+                     python-django,
+                     python-django-horizon,
+                     python-django-nose,
+                     python-hacking,
+                     python-iso8601,
+                     python-keystoneclient (>= 1:1.1.0),
+                     python-manilaclient (>= 1.0.4),
+                     python-mock,
+                     python-mox,
+                     python-nose,
+                     python-nose-exclude,
+                     python-nosehtmloutput,
+                     python-openstack-auth (>= 1.1.7),
+                     python-openstack.nose-plugin,
+                     python-oslosphinx (>= 2.2.0.0),
+                     python-six (>= 1.7.0),
+                     python-testscenarios,
+                     python-testtools,
+                     subunit,
+                     testrepository,
+Build-Conflicts: python-unittest2,
+Standards-Version: 3.9.6
+Homepage: https://github.com/hp-storage/manila-ui
+Vcs-Git: git://anonscm.debian.org/openstack/manila-ui.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/manila-ui.git;a=summary
+
+Package: python-manila-ui
+Architecture: all
+Depends: openstack-dashboard (>= 2015.1.0),
+         python-babel,
+         python-compressor,
+         python-django,
+         python-iso8601,
+         python-keystoneclient (>= 1:1.1.0),
+         python-manilaclient (>= 1.0.4),
+         python-openstack-auth (>= 1.1.7),
+         python-six (>= 1.7.0),
+         ${misc:Depends},
+         ${python:Depends},
+Description: cloud-ready application catalog - dashboard plugin
+ Murano Project introduces an application catalog, which allows application
+ developers and cloud administrators to publish various cloud-ready
+ applications in a browsable categorised catalog, which may be used by the
+ cloud users (including the inexperienced ones) to pick-up the needed
+ applications and services and composes the reliable environments out of them
+ in a "push-the-button" manner.
+ .
+ This package contains the OpenStack dashboard plugin.

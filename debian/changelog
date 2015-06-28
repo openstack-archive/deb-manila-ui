@@ -1,0 +1,5 @@
+manila-ui (0.1.0-1) unstable; urgency=medium
+
+  * Initial release. (Closes: #XXXXXX)
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 28 Jun 2015 18:09:15 +0200
