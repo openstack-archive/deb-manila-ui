@@ -21,6 +21,7 @@ from manila_ui.dashboards.project.shares import test_data
 from manila_ui.test import helpers as test
 
 from openstack_dashboard import api
+from openstack_dashboard.api import nova
 from openstack_dashboard.usage import quotas
 
 SHARE_INDEX_URL = reverse('horizon:project:shares:index')
@@ -28,8 +29,20 @@ SHARE_INDEX_URL = reverse('horizon:project:shares:index')
 
 class ShareViewTests(test.TestCase):
 
-    @unittest.skip("broken unit test")
-    def test_create_share(self):
+    class FakeAZ(object):
+        def __init__(self, name):
+            self.zoneName = name
+
+    def setUp(self):
+        super(ShareViewTests, self).setUp()
+        self.fake_share_type = mock.Mock()
+        self.fake_share_type.name = 'fake'
+        self.fake_share_type.id = 'fake_id'
+        self.fake_share_type.get_keys = mock.Mock(
+            return_value={'driver_handles_share_servers': 'True'})
+
+    @mock.patch.object(nova, 'availability_zone_list')
+    def test_create_share(self, az_list):
         usage_limit = {'maxTotalVolumeGigabytes': 250,
                        'gigabytesUsed': 20,
                        'volumesUsed': 0,
@@ -41,24 +54,32 @@ class ShareViewTests(test.TestCase):
                     'method': u'CreateForm',
                     'share_network': share_net.id,
                     'size': 1,
-                    'type': 'NFS'
+                    'share_proto': u'NFS',
+                    'share_type': 'fake',
+                    'share-network-choices-fake': share_net.id,
+                    'availability_zone': 'fake_az',
                     }
 
+        az_list.return_value = [self.FakeAZ('fake_az'), ]
         api_manila.share_create = mock.Mock()
         api_manila.share_snapshot_list = mock.Mock(return_value=[])
         api_manila.share_network_list = mock.Mock(return_value=share_nets)
-        api_manila.share_type_list = mock.Mock(return_value=[])
+        api_manila.share_type_list = mock.Mock(
+            return_value=[self.fake_share_type, ])
         api.neutron.is_service_enabled = mock.Mock(return_value=[True])
         quotas.tenant_limit_usages = mock.Mock(return_value=[usage_limit])
         url = reverse('horizon:project:shares:create')
         self.client.post(url, formData)
-        api_manila.share_create.assert_called_with(
-            mock.ANY, formData['size'], formData['name'],
-            formData['description'], formData['type'], snapshot_id=None,
-            share_network_id=share_net.id, metadata={})
 
-    @unittest.skip("broken unit test")
-    def test_create_share_from_snapshot(self):
+        api_manila.share_create.assert_called_with(
+            mock.ANY, size=formData['size'], name=formData['name'],
+            description=formData['description'], proto=formData['share_proto'],
+            snapshot_id=None, is_public=False, share_network=share_net.id,
+            metadata={}, share_type=formData['share_type'],
+            availability_zone=formData['availability_zone'])
+
+    @mock.patch.object(nova, 'availability_zone_list')
+    def test_create_share_from_snapshot(self, az_list):
         share_net = test_data.active_share_network
         share_nets = [share_net]
         snapshot = test_data.snapshot
@@ -67,11 +88,15 @@ class ShareViewTests(test.TestCase):
                     'method': u'CreateForm',
                     'share_network': share_net.id,
                     'size': snapshot.size,
-                    'type': 'NFS',
+                    'share_proto': 'NFS',
+                    'share_type': 'fake',
                     'share_source_type': 'snapshot',
-                    'snapshot': snapshot.id
+                    'snapshot': snapshot.id,
+                    'share-network-choices-fake': share_net.id,
+                    'availability_zone': 'fake_az'
                     }
 
+        az_list.return_value = [self.FakeAZ('fake_az'), ]
         api_manila.share_create = mock.Mock()
         api_manila.share_snapshot_list = mock.Mock(
             return_value=[snapshot])
@@ -79,45 +104,23 @@ class ShareViewTests(test.TestCase):
             return_value=snapshot)
         api.neutron.is_service_enabled = mock.Mock(return_value=[True])
         api_manila.share_network_list = mock.Mock(return_value=share_nets)
+        api_manila.share_type_list = mock.Mock(
+            return_value=[self.fake_share_type, ])
+
         url = reverse('horizon:project:shares:create')
         res = self.client.post(url, formData)
         api_manila.share_create.assert_called_with(
-            mock.ANY, formData['size'], formData['name'],
-            formData['description'], formData['type'],
-            snapshot_id=snapshot.id,
-            share_network_id=share_net.id, metadata={})
+            mock.ANY, size=formData['size'], name=formData['name'],
+            description=formData['description'], proto=formData['share_proto'],
+            snapshot_id=snapshot.id, is_public=False,
+            share_network=share_net.id, metadata={},
+            share_type=formData['share_type'],
+            availability_zone=formData['availability_zone'])
         self.assertRedirectsNoFollow(res, SHARE_INDEX_URL)
 
-    @unittest.skip("broken unit test")
-    def test_create_share_from_snapshot_url(self):
-        share_net = test_data.active_share_network
-        share_nets = [share_net]
-        snapshot = test_data.snapshot
-        formData = {'name': u'new_share',
-                    'description': u'This is test share',
-                    'method': u'CreateForm',
-                    'share_network': share_net.id,
-                    'size': 1,
-                    'type': 'NFS'
-                    }
-
-        api_manila.share_create = mock.Mock()
-        api_manila.share_snapshot_list = mock.Mock(return_value=[])
-        api_manila.share_snapshot_get = mock.Mock(
-            return_value=snapshot)
-        api.neutron.is_service_enabled = mock.Mock(return_value=[True])
-        api_manila.share_network_list = mock.Mock(return_value=share_nets)
-        url = reverse('horizon:project:shares:create')
-        url = url + '?snapshot_id=%s' % snapshot.id
-        self.client.post(url, formData)
-        api_manila.share_create.assert_called_with(
-            mock.ANY, formData['size'], formData['name'],
-            formData['description'], formData['type'], snapshot_id=None,
-            share_network_id=share_net.id, metadata={})
-
-    @unittest.skip("broken unit test")
     def test_delete_share(self):
         share = test_data.share
+        api_manila.share_snapshot_list = mock.Mock(return_value=[])
 
         formData = {'action':
                     'shares__delete__%s' % share.id}
@@ -153,6 +156,8 @@ class ShareViewTests(test.TestCase):
         self.assertContains(res, "<dd>%s</dd>" % share.id, 1, 200)
         self.assertContains(res, "<dd>%s GB</dd>" % share.size, 1, 200)
         self.assertContains(res, "<dd>%s</dd>" % share.share_proto, 1, 200)
+        self.assertContains(res, "<dd>%s</dd>" % share.availability_zone, 1,
+                            200)
         for rule in rules:
             self.assertContains(res, "<dt>%s</dt>" % rule.access_type,
                                 1, 200)
@@ -191,13 +196,15 @@ class ShareViewTests(test.TestCase):
         api_manila.share_get = mock.Mock(return_value=share)
         api_manila.share_allow = mock.Mock()
         api.neutron.is_service_enabled = mock.Mock(return_value=[True])
-        formData = {'type': 'user',
+        formData = {'access_type': 'user',
                     'method': u'CreateForm',
-                    'access_to': 'someuser'}
+                    'access_to': 'someuser',
+                    'access_level': 'rw'}
         res = self.client.post(url, formData)
         api_manila.share_allow.assert_called_once_with(
-            mock.ANY, share.id, access_type=formData['type'],
-            access=formData['access_to'])
+            mock.ANY, share.id, access_type=formData['access_type'],
+            access_to=formData['access_to'],
+            access_level=formData['access_level'])
         self.assertRedirectsNoFollow(
             res,
             reverse('horizon:project:shares:manage_rules', args=[share.id]))
@@ -217,3 +224,22 @@ class ShareViewTests(test.TestCase):
         self.client.post(url, formData)
         api_manila.share_deny.assert_called_with(
             mock.ANY, test_data.share.id, rule.id)
+
+    def test_extend_share(self):
+        share = test_data.share
+        formData = {'new_size': share.size + 1,
+                    'method': u'UpdateForm'}
+        usage_limit = {'maxTotalShareGigabytes': 250,
+                       'totalShareGigabytesUsed': 20}
+        url = reverse('horizon:project:shares:extend', args=[share.id])
+
+        api_manila.share_get = mock.Mock(return_value=share)
+        quotas.tenant_limit_usages = mock.Mock(return_value=usage_limit)
+        share_extend = mock.Mock()
+
+        with mock.patch('manila_ui.api.manila.share_extend', share_extend):
+            response = self.client.post(url, formData)
+
+            self.assertEqual(302, response.status_code)
+            share_extend.assert_called_once_with(
+                mock.ANY, share.id, formData['new_size'])

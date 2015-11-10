@@ -64,8 +64,7 @@ class SharesTests(test.BaseAdminViewTests):
         formData = {'action':
                     'shares__delete__%s' % share.id}
 
-        snaps = [test_data.snapshot]
-        api_manila.share_snapshot_list = mock.Mock(return_value=snaps)
+        api_manila.share_snapshot_list = mock.Mock(return_value=[])
         api.keystone.tenant_list = mock.Mock(return_value=([], None))
         api_manila.share_delete = mock.Mock()
         api_manila.share_get = mock.Mock(

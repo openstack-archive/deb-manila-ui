@@ -27,7 +27,7 @@ import logging
 from django.conf import settings
 import six
 
-from manilaclient.v1 import client as manila_client
+from manilaclient import client as manila_client
 from manilaclient.v1.contrib import list_extensions as manila_list_extensions
 
 from horizon import exceptions
@@ -37,6 +37,9 @@ from openstack_dashboard.api import base
 
 LOG = logging.getLogger(__name__)
 
+MANILA_UI_USER_AGENT_REPR = "manila_ui_plugin_for_horizon"
+MANILA_VERSION = "2.5"  # requires manilaclient 1.3.0 or newer
+MANILA_SERVICE_TYPE = "sharev2"
 
 # API static values
 SHARE_STATE_AVAILABLE = "available"
@@ -48,19 +51,24 @@ def manilaclient(request):
     cacert = getattr(settings, 'OPENSTACK_SSL_CACERT', None)
     manila_url = ""
     try:
-        manila_url = base.url_for(request, 'share')
+        manila_url = base.url_for(request, MANILA_SERVICE_TYPE)
     except exceptions.ServiceCatalogException:
         LOG.debug('no share service configured.')
         return None
     LOG.debug('manilaclient connection created using token "%s" and url "%s"' %
               (request.user.token.id, manila_url))
-    c = manila_client.Client(request.user.username,
-                             input_auth_token=request.user.token.id,
-                             project_id=request.user.tenant_id,
-                             service_catalog_url=manila_url,
-                             insecure=insecure,
-                             cacert=cacert,
-                             http_log_debug=settings.DEBUG)
+    c = manila_client.Client(
+        MANILA_VERSION,
+        username=request.user.username,
+        input_auth_token=request.user.token.id,
+        project_id=request.user.tenant_id,
+        service_catalog_url=manila_url,
+        insecure=insecure,
+        cacert=cacert,
+        http_log_debug=settings.DEBUG,
+        user_agent=MANILA_UI_USER_AGENT_REPR,
+        api_version=MANILA_VERSION,
+    )
     c.client.auth_token = request.user.token.id
     c.client.management_url = manila_url
     return c
@@ -77,12 +85,12 @@ def share_get(request, share_id):
 
 def share_create(request, size, name, description, proto, snapshot_id=None,
                  metadata=None, share_network=None, share_type=None,
-                 is_public=None):
+                 is_public=None, availability_zone=None):
     return manilaclient(request).shares.create(
         proto, size, name=name, description=description,
         share_network=share_network, snapshot_id=snapshot_id,
         metadata=metadata, share_type=share_type, is_public=is_public,
-    )
+        availability_zone=availability_zone)
 
 
 def share_delete(request, share_id):
@@ -128,6 +136,10 @@ def share_manage(request, service_host, protocol, export_path,
 def share_unmanage(request, share):
     # Param 'share' can be either string with ID or object with attr 'id'.
     return manilaclient(request).shares.unmanage(share)
+
+
+def share_extend(request, share_id, new_size):
+    return manilaclient(request).shares.extend(share_id, new_size)
 
 
 def share_snapshot_get(request, snapshot_id):
@@ -279,10 +291,11 @@ def share_type_get(request, share_type_id):
 
 
 def share_type_create(request, name, spec_driver_handles_share_servers,
-                      is_public=True):
+                      spec_snapshot_support=True, is_public=True):
     return manilaclient(request).share_types.create(
         name=name,
         spec_driver_handles_share_servers=spec_driver_handles_share_servers,
+        spec_snapshot_support=spec_snapshot_support,
         is_public=is_public)
 
 
@@ -299,9 +312,9 @@ def share_type_set_extra_specs(request, share_type_id, extra_specs):
         share_type_id).set_keys(extra_specs)
 
 
-def share_type_unset_extra_specs(request, share_type_id, key):
+def share_type_unset_extra_specs(request, share_type_id, keys):
     return manilaclient(request).share_types.get(
-        share_type_id).unset_keys(key)
+        share_type_id).unset_keys(keys)
 
 
 def share_type_access_list(request, share_type_id):

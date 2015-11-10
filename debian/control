@@ -3,7 +3,6 @@ Section: python
 Priority: extra
 Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
 Uploaders: Thomas Goirand <zigo@debian.org>,
-           ,
 Build-Depends: debhelper (>= 9),
                dh-python,
                openstack-pkg-tools,
@@ -11,7 +10,7 @@ Build-Depends: debhelper (>= 9),
                python-pbr,
                python-setuptools,
                python-sphinx,
-Build-Depends-Indep: openstack-dashboard (>= 2015.1~b3),
+Build-Depends-Indep: openstack-dashboard (>= 2015.1.0),
                      python-babel,
                      python-compressor,
                      python-coverage,
@@ -54,12 +53,14 @@ Depends: openstack-dashboard (>= 2015.1.0),
          python-six (>= 1.7.0),
          ${misc:Depends},
          ${python:Depends},
-Description: cloud-ready application catalog - dashboard plugin
- Murano Project introduces an application catalog, which allows application
- developers and cloud administrators to publish various cloud-ready
- applications in a browsable categorised catalog, which may be used by the
- cloud users (including the inexperienced ones) to pick-up the needed
- applications and services and composes the reliable environments out of them
- in a "push-the-button" manner.
+Description: OpenStack shared file system as a service - Dashboard plugin
+ Manila is an OpenStack project to provide Shared Filesystems as a service.
+ It provides coordinated access to shared or distributed file systems. While
+ the primary consumption of file shares would be across OpenStack Compute
+ instances, the service is also intended to be accessible as an independent
+ capability in line with the modular design established by other OpenStack
+ services. Manila is extensible for multiple backends (to support vendor or
+ file system specific nuances / capabilities) and accommodates any of a
+ variety of shared or distributed file system types.
  .
- This package contains the OpenStack dashboard plugin.
+ This package contains the Manila OpenStack dashboard plugin.

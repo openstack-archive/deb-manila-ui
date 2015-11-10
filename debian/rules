@@ -2,7 +2,7 @@
 
 PYTHONS:=$(shell pyversions -vr)
 
-UPSTREAM_GIT = git://github.com/hp-storage/manila-ui.git
+UPSTREAM_GIT = git://github.com/openstack/manila-ui.git
 include /usr/share/openstack-pkg-tools/pkgos.make
 export OSLO_PACKAGE_VERSION=$(VERSION)
 

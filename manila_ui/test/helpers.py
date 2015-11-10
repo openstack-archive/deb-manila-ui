@@ -14,7 +14,9 @@
 import os
 
 from django.utils import unittest
+import mock
 
+from manila_ui import api
 from manila_ui.test.test_data import utils
 from openstack_dashboard.test import helpers
 
@@ -40,4 +42,9 @@ class BaseAdminViewTests(ManilaTestsMixin, helpers.BaseAdminViewTests):
 
 
 class APITestCase(ManilaTestsMixin, helpers.APITestCase):
-    pass
+
+    def setUp(self):
+        super(APITestCase, self).setUp()
+        self.manilaclient = mock.Mock()
+        self._original_manilaclient = api.manila.manilaclient
+        api.manila.manilaclient = lambda request: self.manilaclient

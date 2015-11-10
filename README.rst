@@ -8,8 +8,8 @@ Manila Management Dashboard
 
 .. Uncomment these bullet items when the project is integrated into OpenStack
 .. item * Documentation: http://docs.openstack.org/developer/manila-ui
-.. item * Source: http://git.openstack.org/cgit/openstack/manila-ui
 
+* Source: http://git.openstack.org/cgit/openstack/manila-ui
 * Bugs: http://bugs.launchpad.net/manila-ui
 
 Installation instructions
@@ -18,7 +18,7 @@ Installation instructions
 Begin by cloning the Horizon and Manila UI repositories::
 
     git clone https://github.com/openstack/horizon
-    git clone https://github.com/hp-storage/manila-ui
+    git clone https://github.com/openstack/manila-ui
 
 Create a virtual environment and install Horizon dependencies::
 
@@ -31,15 +31,6 @@ Set up your ``local_settings.py`` file::
 
 Open up the copied ``local_settings.py`` file in your preferred text
 editor. You will want to customize several settings:
-
--  ``HORIZON_CONFIG`` requires, an entry, ``customization_module``,
-   that refers to ``manila_ui.overrides``::
-
-    HORIZON_CONFIG = {
-        ...
-        'js_spec_files': [],
-        'customization_module': 'manila_ui.overrides',
-    }
 
 -  ``OPENSTACK_HOST`` should be configured with the hostname of your
    OpenStack server. Verify that the ``OPENSTACK_KEYSTONE_URL`` and

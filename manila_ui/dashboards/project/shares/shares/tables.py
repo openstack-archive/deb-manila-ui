@@ -120,6 +120,23 @@ class EditShareMetadata(tables.LinkAction):
         return share.status in ("available", "in-use")
 
 
+class ExtendShare(tables.LinkAction):
+    name = "extend_share"
+    verbose_name = _("Extend Share")
+    url = "horizon:project:shares:extend"
+    classes = ("ajax-modal", "btn-create")
+    policy_rules = (("share", "share:extend"),)
+
+    def get_policy_target(self, request, datum=None):
+        project_id = None
+        if datum:
+            project_id = getattr(datum, "os-share-tenant-attr:tenant_id", None)
+        return {"project_id": project_id}
+
+    def allowed(self, request, share=None):
+        return share.status.lower() in ("available",)
+
+
 class UpdateRow(tables.Row):
     ajax = True
 
@@ -152,6 +169,27 @@ class SharesTableBase(tables.DataTable):
         ("error_deleting", False), ("ERROR_DELETING", False),
         ("MANAGE_ERROR", False),
         ("UNMANAGE_ERROR", False),
+        ("extending_error", False),
+    )
+    STATUS_DISPLAY_CHOICES = (
+        ("available", pgettext_lazy("Current status of share", u"Available")),
+        ("AVAILABLE", pgettext_lazy("Current status of share", u"Available")),
+        ("creating", pgettext_lazy("Current status of share", u"Creating")),
+        ("CREATING", pgettext_lazy("Current status of share", u"Creating")),
+        ("deleting", pgettext_lazy("Current status of share", u"Deleting")),
+        ("DELETING", pgettext_lazy("Current status of share", u"Deleting")),
+        ("error", pgettext_lazy("Current status of share", u"Error")),
+        ("ERROR", pgettext_lazy("Current status of share", u"Error")),
+        ("error_deleting", pgettext_lazy("Current status of share",
+                                         u"Deleting")),
+        ("ERROR_DELETING", pgettext_lazy("Current status of share",
+                                         u"Deleting")),
+        ("MANAGE_ERROR", pgettext_lazy("Current status of share",
+                                       u"Manage Error")),
+        ("UNMANAGE_ERROR", pgettext_lazy("Current status of share",
+                                         u"Unmanage Error")),
+        ("extending_error", pgettext_lazy("Current status of share",
+                                          u"Extending Error")),
     )
     STATUS_DISPLAY_CHOICES = (
         ("available", pgettext_lazy("Current status of share", u"Available")),
@@ -296,5 +334,5 @@ class SharesTable(SharesTableBase):
         status_columns = ["status"]
         row_class = UpdateRow
         table_actions = (CreateShare, DeleteShare, SharesFilterAction)
-        row_actions = (EditShare, snapshot_tables.CreateSnapshot, DeleteShare,
-                       ManageRules, EditShareMetadata)
+        row_actions = (EditShare, ExtendShare, snapshot_tables.CreateSnapshot,
+                       DeleteShare, ManageRules, EditShareMetadata)
