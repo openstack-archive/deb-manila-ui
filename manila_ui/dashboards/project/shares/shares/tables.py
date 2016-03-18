@@ -191,24 +191,6 @@ class SharesTableBase(tables.DataTable):
         ("extending_error", pgettext_lazy("Current status of share",
                                           u"Extending Error")),
     )
-    STATUS_DISPLAY_CHOICES = (
-        ("available", pgettext_lazy("Current status of share", u"Available")),
-        ("AVAILABLE", pgettext_lazy("Current status of share", u"Available")),
-        ("creating", pgettext_lazy("Current status of share", u"Creating")),
-        ("CREATING", pgettext_lazy("Current status of share", u"Creating")),
-        ("deleting", pgettext_lazy("Current status of share", u"Deleting")),
-        ("DELETING", pgettext_lazy("Current status of share", u"Deleting")),
-        ("error", pgettext_lazy("Current status of share", u"Error")),
-        ("ERROR", pgettext_lazy("Current status of share", u"Error")),
-        ("error_deleting", pgettext_lazy("Current status of share",
-                                         u"Deleting")),
-        ("ERROR_DELETING", pgettext_lazy("Current status of share",
-                                         u"Deleting")),
-        ("MANAGE_ERROR", pgettext_lazy("Current status of share",
-                                       u"Manage Error")),
-        ("UNMANAGE_ERROR", pgettext_lazy("Current status of share",
-                                         u"Unmanage Error")),
-    )
     name = tables.Column("name",
                          verbose_name=_("Name"),
                          link="horizon:project:shares:detail")

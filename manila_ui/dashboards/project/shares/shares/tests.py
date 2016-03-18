@@ -14,7 +14,6 @@
 
 from django.core.urlresolvers import reverse
 import mock
-import unittest
 
 from manila_ui.api import manila as api_manila
 from manila_ui.dashboards.project.shares import test_data
@@ -189,7 +188,6 @@ class ShareViewTests(test.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertTemplateUsed(res, 'project/shares/shares/manage_rules.html')
 
-    @unittest.skip("broken unit test")
     def test_create_rule(self):
         share = test_data.share
         url = reverse('horizon:project:shares:rule_add', args=[share.id])
