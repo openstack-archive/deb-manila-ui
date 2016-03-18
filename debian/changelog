@@ -1,4 +1,4 @@
-manila-ui (0.1.0-1) unstable; urgency=medium
+manila-ui (2.0.0-1) unstable; urgency=medium
 
   * Initial release. (Closes: #790425)
 
