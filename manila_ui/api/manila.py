@@ -21,18 +21,13 @@
 #    under the License.
 
 from __future__ import absolute_import
-
 import logging
 
 from django.conf import settings
+from manilaclient import client as manila_client
 import six
 
-from manilaclient import client as manila_client
-from manilaclient.v1.contrib import list_extensions as manila_list_extensions
-
 from horizon import exceptions
-from horizon.utils.memoized import memoized  # noqa
-
 from openstack_dashboard.api import base
 
 LOG = logging.getLogger(__name__)
@@ -67,7 +62,6 @@ def manilaclient(request):
         cacert=cacert,
         http_log_debug=settings.DEBUG,
         user_agent=MANILA_UI_USER_AGENT_REPR,
-        api_version=MANILA_VERSION,
     )
     c.client.auth_token = request.user.token.id
     c.client.management_url = manila_url
@@ -341,20 +335,3 @@ def tenant_absolute_limits(request):
         else:
             limits_dict[limit.name] = limit.value
     return limits_dict
-
-
-@memoized
-def list_extensions(request):
-    return manila_list_extensions.ListExtManager(manilaclient(request))\
-        .show_all()
-
-
-@memoized
-def extension_supported(request, extension_name):
-    """This method will determine if manila supports a given extension name.
-    """
-    extensions = list_extensions(request)
-    for extension in extensions:
-        if extension.name == extension_name:
-            return True
-    return False
