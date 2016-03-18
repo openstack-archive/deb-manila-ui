@@ -28,12 +28,10 @@ override_dh_clean:
 
 override_dh_auto_install:
 	dh_auto_install -O--buildsystem=python_distutils
-	# Activates tuskar-ui in the dashboard
-#	set -e ; for pyvers in $(PYTHONS); do \
-#		mkdir -p $(CURDIR)/debian/python-murano-dashboard/usr/lib/python$$pyvers/dist-packages/openstack_dashboard/enabled ; \
-#		cp $(CURDIR)/muranodashboard/local/_50_murano.py $(CURDIR)/debian/python-murano-dashboard/usr/lib/python$$pyvers/dist-packages/openstack_dashboard/enabled ; \
-#	done
-#	mkdir -p $(CURDIR)/debian/python-murano-dashboard/usr/share/pyshared/openstack_dashboard/enabled
-#	cp $(CURDIR)/muranodashboard/local/_50_murano.py $(CURDIR)/debian/python-murano-dashboard/usr/share/pyshared/openstack_dashboard/enabled
-#	mkdir -p $(CURDIR)/debian/python-murano-dashboard/usr/share/openstack-dashboard/openstack_dashboard/static/muranodashboard
-#	cp -auxf muranodashboard/static/muranodashboard/* $(CURDIR)/debian/python-murano-dashboard/usr/share/openstack-dashboard/openstack_dashboard/static/muranodashboard/
+	# Activates in the dashboard
+	set -e ; for pyvers in $(PYTHONS); do \
+		mkdir -p $(CURDIR)/debian/python-manila-ui/usr/lib/python$$pyvers/dist-packages/openstack_dashboard/enabled ; \
+		cp $(CURDIR)/manila_ui/enabled/_90* $(CURDIR)/debian/python-manila-ui/usr/lib/python$$pyvers/dist-packages/openstack_dashboard/enabled ; \
+	done
+	mkdir -p $(CURDIR)/debian/python-manila-ui/usr/share/openstack-dashboard/openstack_dashboard/enabled
+	cp $(CURDIR)/manila_ui/enabled/_90*.py $(CURDIR)/debian/python-manila-ui/usr/share/openstack-dashboard/openstack_dashboard/enabled
