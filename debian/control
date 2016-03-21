@@ -34,7 +34,6 @@ Build-Depends-Indep: openstack-dashboard (>= 2015.1.0),
                      python-testtools,
                      subunit,
                      testrepository,
-Build-Conflicts: python-unittest2,
 Standards-Version: 3.9.6
 Homepage: https://github.com/hp-storage/manila-ui
 Vcs-Git: git://anonscm.debian.org/openstack/manila-ui.git
