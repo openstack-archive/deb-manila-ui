@@ -10,7 +10,7 @@ Build-Depends: debhelper (>= 9),
                python-pbr (>= 1.8),
                python-setuptools,
                python-sphinx,
-Build-Depends-Indep: openstack-dashboard (>= 2015.1.0),
+Build-Depends-Indep: openstack-dashboard (>= 2:9.0.0~rc1),
                      python-babel,
                      python-coverage,
                      python-django (>= 1.8),
@@ -41,7 +41,7 @@ Homepage: https://github.com/hp-storage/manila-ui
 
 Package: python-manila-ui
 Architecture: all
-Depends: openstack-dashboard (>= 2015.1.0),
+Depends: openstack-dashboard (>= 2:9.0.0~rc1),
          python-babel,
          python-django (>= 1.8),
          python-django-compressor (>= 1.4),
