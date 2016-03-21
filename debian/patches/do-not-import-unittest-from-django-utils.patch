@@ -1,0 +1,16 @@
+Description: Do not import unittest from django.utils
+Author: Thomas Goirand <zigo@debian.org>
+Forwarded: no
+Last-Update: 2016-03-21
+
+--- manila-ui-2.0.0.orig/manila_ui/test/helpers.py
++++ manila-ui-2.0.0/manila_ui/test/helpers.py
+@@ -13,7 +13,7 @@
+ 
+ import os
+ 
+-from django.utils import unittest
++import unittest
+ import mock
+ 
+ from manila_ui import api
