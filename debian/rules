@@ -12,14 +12,14 @@ export OSLO_PACKAGE_VERSION=$(VERSION)
 override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 	bash run_tests.sh -N --no-pep8
-#	NOSE_WITH_OPENSTACK=1 \
-#		NOSE_OPENSTACK_COLOR=1 \
-#		NOSE_OPENSTACK_RED=0.05 \
-#		NOSE_OPENSTACK_YELLOW=0.025 \
-#		NOSE_OPENSTACK_SHOW_ELAPSED=1 \
-#		DJANGO_SETTINGS_MODULE=manila_ui.test.settings \
-#		python-coverage run \
-#		$(CURDIR)/manage.py test manila-ui --settings=muranodashboard.tests.settings
+	NOSE_WITH_OPENSTACK=1 \
+		NOSE_OPENSTACK_COLOR=1 \
+		NOSE_OPENSTACK_RED=0.05 \
+		NOSE_OPENSTACK_YELLOW=0.025 \
+		NOSE_OPENSTACK_SHOW_ELAPSED=1 \
+		DJANGO_SETTINGS_MODULE=manila_ui.test.settings \
+		python-coverage run \
+		$(CURDIR)/manage.py test manila-ui --settings=manila_ui.test.settings
 endif
 
 override_dh_clean:
