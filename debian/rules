@@ -19,7 +19,7 @@ ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 		NOSE_OPENSTACK_SHOW_ELAPSED=1 \
 		DJANGO_SETTINGS_MODULE=manila_ui.test.settings \
 		python-coverage run \
-		$(CURDIR)/manage.py test manila-ui --settings=manila_ui.test.settings
+		$(CURDIR)/manage.py test manila_ui --settings=manila_ui.test.settings
 endif
 
 override_dh_clean:
