@@ -1,6 +1,6 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: manila-ui
-Source: git://github.com/hp-storage/manila-ui.git
+Source: https://github.com/hp-storage/manila-ui
 
 Files: *
 Copyright: (c) 2013-2015, Hewlett-Packard Development Company, L.P.
