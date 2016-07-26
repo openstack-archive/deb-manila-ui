@@ -1,0 +1,10 @@
+Description: Add MANIFEST.in to package missing files
+Author: Thomas Goirand <zigo@debian.org>
+Bug-Debian: https://bugs.debian.org/832057
+Forwarded: not-needed
+Last-Update: 2016-07-16
+
+--- /dev/null
++++ manila-ui-2.1.0/MANIFEST.in
+@@ -0,0 +1 @@
++recursive-include manila_ui *.html *.scss *.js

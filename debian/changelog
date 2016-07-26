@@ -7,6 +7,7 @@ manila-ui (2.1.0-2) UNRELEASED; urgency=medium
 
   [ Thomas Goirand ]
   * Fixed horizon EPOC to 3 after the fix of version 9.0 to Sid.
+  * Add patch: add-MANIFEST.in-to-package-missing-files.patch.
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 28 Jun 2016 08:25:03 +0000
 
