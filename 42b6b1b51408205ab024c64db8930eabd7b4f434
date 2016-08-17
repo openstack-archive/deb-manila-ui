@@ -1,0 +1,9 @@
+Code-Review+2: Tatiana Ovchinnikova <t.v.ovtchinnikova@gmail.com>
+Code-Review+2: Thomas Bechtold <tbechtold@suse.com>
+Workflow+1: Thomas Bechtold <tbechtold@suse.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 19 May 2016 07:46:12 +0000
+Reviewed-on: https://review.openstack.org/318321
+Project: openstack/deb-manila-ui
+Branch: refs/heads/master

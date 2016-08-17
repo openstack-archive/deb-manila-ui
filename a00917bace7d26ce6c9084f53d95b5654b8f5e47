@@ -1,0 +1,9 @@
+Code-Review+2: Thomas Bechtold <tbechtold@suse.com>
+Code-Review+2: Mark Sturdevant <mark.sturdevant@hpe.com>
+Workflow+1: Mark Sturdevant <mark.sturdevant@hpe.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 17 May 2016 20:18:56 +0000
+Reviewed-on: https://review.openstack.org/317182
+Project: openstack/deb-manila-ui
+Branch: refs/heads/master

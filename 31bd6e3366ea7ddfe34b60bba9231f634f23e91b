@@ -1,0 +1,10 @@
+Code-Review+2: Mark Sturdevant <mark.sturdevant@hpe.com>
+Code-Review+2: Clinton Knight <cknight@netapp.com>
+Code-Review+2: Ben Swartzlander <ben@swartzlander.org>
+Workflow+1: Ben Swartzlander <ben@swartzlander.org>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 25 May 2016 19:52:43 +0000
+Reviewed-on: https://review.openstack.org/320716
+Project: openstack/deb-manila-ui
+Branch: refs/heads/master

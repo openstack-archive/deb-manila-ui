@@ -1,0 +1,9 @@
+Code-Review+2: xing-yang <xing.yang@emc.com>
+Code-Review+2: Ben Swartzlander <ben@swartzlander.org>
+Workflow+1: Ben Swartzlander <ben@swartzlander.org>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 31 May 2016 00:48:14 +0000
+Reviewed-on: https://review.openstack.org/321347
+Project: openstack/deb-manila-ui
+Branch: refs/heads/master

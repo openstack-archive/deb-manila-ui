@@ -1,0 +1,9 @@
+Code-Review+2: Valeriy Ponomaryov <vponomaryov@mirantis.com>
+Code-Review+2: Tatiana Ovchinnikova <t.v.ovtchinnikova@gmail.com>
+Workflow+1: Tatiana Ovchinnikova <t.v.ovtchinnikova@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 20 Jul 2016 15:57:47 +0000
+Reviewed-on: https://review.openstack.org/343711
+Project: openstack/deb-manila-ui
+Branch: refs/heads/master

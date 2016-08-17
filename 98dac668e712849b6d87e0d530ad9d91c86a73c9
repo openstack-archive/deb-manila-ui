@@ -1,0 +1,9 @@
+Code-Review+2: Valeriy Ponomaryov <vponomaryov@mirantis.com>
+Code-Review+2: Mark Sturdevant <mark.sturdevant@hpe.com>
+Workflow+1: Mark Sturdevant <mark.sturdevant@hpe.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 20 May 2016 16:21:50 +0000
+Reviewed-on: https://review.openstack.org/318468
+Project: openstack/deb-manila-ui
+Branch: refs/heads/master

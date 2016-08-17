@@ -1,0 +1,10 @@
+Code-Review+2: Valeriy Ponomaryov <vponomaryov@mirantis.com>
+Code-Review+2: Mark Sturdevant <mark.sturdevant@hpe.com>
+Code-Review+2: Clinton Knight <cknight@netapp.com>
+Workflow+1: Clinton Knight <cknight@netapp.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 21 Jul 2016 18:44:51 +0000
+Reviewed-on: https://review.openstack.org/336599
+Project: openstack/deb-manila-ui
+Branch: refs/heads/master
