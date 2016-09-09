@@ -1,0 +1,10 @@
+Code-Review+2: Rodrigo Barbieri <rodrigo.barbieri2010@gmail.com>
+Code-Review+2: Valeriy Ponomaryov <vponomaryov@mirantis.com>
+Code-Review+2: Clinton Knight <cknight@netapp.com>
+Workflow+1: Clinton Knight <cknight@netapp.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 16 May 2016 17:40:40 +0000
+Reviewed-on: https://review.openstack.org/311311
+Project: openstack/deb-manila-ui
+Branch: refs/heads/stable/mitaka
