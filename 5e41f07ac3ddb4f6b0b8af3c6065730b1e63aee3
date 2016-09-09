@@ -1,0 +1,9 @@
+Code-Review+2: Tom Barron <tpb@dyncloud.net>
+Code-Review+2: xing-yang <xing.yang@emc.com>
+Workflow+1: xing-yang <xing.yang@emc.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 18 Aug 2016 20:03:17 +0000
+Reviewed-on: https://review.openstack.org/357212
+Project: openstack/deb-manila-ui
+Branch: refs/heads/master
