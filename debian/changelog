@@ -1,3 +1,10 @@
+manila-ui (2.1.0-3) UNRELEASED; urgency=medium
+
+  * d/s/options: extend-diff-ignore of .gitreview
+  * d/control: Using OpenStack's Gerrit as VCS URLs.
+
+ -- Ondřej Nový <onovy@debian.org>  Mon, 26 Sep 2016 19:02:59 +0200
+
 manila-ui (2.1.0-2) unstable; urgency=medium
 
   [ Ondřej Nový ]
