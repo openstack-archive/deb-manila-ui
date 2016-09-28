@@ -13,11 +13,13 @@
 #    under the License.
 
 from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import exceptions
 from horizon import forms
 from horizon import tabs
+from horizon.utils import memoized
 
 from manila_ui.api import manila
 from manila_ui.dashboards.project.shares.security_services import\
@@ -26,11 +28,17 @@ from manila_ui.dashboards.project.shares.security_services \
     import tabs as security_services_tabs
 from manila_ui.dashboards.project.shares.share_networks import forms\
     as share_net_forms
+from manila_ui.dashboards import utils
 
 
 class UpdateView(forms.ModalFormView):
     template_name = "project/shares/security_services/update.html"
     form_class = sec_services_forms.Update
+    form_id = "update_security_service"
+    modal_header = _("Edit Security Service")
+    modal_id = "update_security_service_modal"
+    submit_label = _("Edit")
+    submit_url = "horizon:project:shares:update_security_service"
     success_url = 'horizon:project:shares:index'
     page_title = _('Edit Security Service')
 
@@ -51,10 +59,10 @@ class UpdateView(forms.ModalFormView):
 
     def get_context_data(self, **kwargs):
         context = super(UpdateView, self).get_context_data(**kwargs)
-        context['sec_service'] = self.get_object()
         return context
 
     def get_initial(self):
+        self.submit_url = reverse(self.submit_url, kwargs=self.kwargs)
         sec_service = self.get_object()
         return {'sec_service_id': self.kwargs["sec_service_id"],
                 'name': sec_service.name,
@@ -63,10 +71,15 @@ class UpdateView(forms.ModalFormView):
 
 class CreateView(forms.ModalFormView):
     form_class = sec_services_forms.Create
+    form_id = "create_security_service"
     template_name = ('project/shares/security_services'
                      '/create_security_service.html')
+    modal_header = _("Create Security Service")
+    modal_id = "create_security_service_modal"
+    submit_label = _("Create")
+    submit_url = reverse_lazy("horizon:project:shares:create_security_service")
     success_url = 'horizon:project:shares:index'
-    page_title = _('Create a Security Service')
+    page_title = _('Create Security Service')
 
     def get_success_url(self):
         return reverse(self.success_url)
@@ -106,6 +119,7 @@ class AddSecurityServiceView(forms.ModalFormView):
 class Detail(tabs.TabView):
     tab_group_class = security_services_tabs.SecurityServiceDetailTabs
     template_name = 'project/shares/security_services/detail.html'
+    redirect_url = reverse_lazy('horizon:project:shares:index')
 
     def get_context_data(self, **kwargs):
         context = super(Detail, self).get_context_data(**kwargs)
@@ -118,16 +132,19 @@ class Detail(tabs.TabView):
             {'service_display_name': sec_service_display_name}
         return context
 
+    @memoized.memoized_method
     def get_data(self):
         try:
             sec_service_id = self.kwargs['sec_service_id']
             sec_service = manila.security_service_get(
                 self.request, sec_service_id)
+            sec_service.type = utils.get_nice_security_service_type(
+                sec_service)
         except Exception:
-            redirect = reverse('horizon:project:shares:index')
             message = _("Unable to retrieve security service "
                         "'%s' details.") % sec_service_id
-            exceptions.handle(self.request, message, redirect=redirect)
+            exceptions.handle(
+                self.request, message, redirect=self.redirect_url)
         return sec_service
 
     def get_tabs(self, request, *args, **kwargs):

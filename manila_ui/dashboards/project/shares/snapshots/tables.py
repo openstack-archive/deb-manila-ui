@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
 # Copyright 2012 Nebula, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -180,5 +178,10 @@ class SnapshotsTable(tables.DataTable):
         verbose_name = _("Snapshots")
         status_columns = ["status"]
         row_class = UpdateRow
-        table_actions = (DeleteSnapshot, )
-        row_actions = (DeleteSnapshot, CreateShareFromSnapshot, EditSnapshot)
+        table_actions = (
+            tables.NameFilterAction,
+            DeleteSnapshot)
+        row_actions = (
+            EditSnapshot,
+            CreateShareFromSnapshot,
+            DeleteSnapshot)

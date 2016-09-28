@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
 # Copyright 2012 Nebula, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -70,6 +68,7 @@ class CreateShare(tables.LinkAction):
     verbose_name = _("Create Share")
     url = "horizon:project:shares:create"
     classes = ("ajax-modal", "btn-create")
+    icon = "plus"
     policy_rules = (("share", "share:create"),)
 
     def allowed(self, request, share=None):
@@ -165,6 +164,7 @@ class SharesTableBase(tables.DataTable):
         ("available", True), ("AVAILABLE", True),
         ("creating", None), ("CREATING", None),
         ("deleting", None), ("DELETING", None),
+        ("migrating", None), ("migrating_to", None),
         ("error", False), ("ERROR", False),
         ("error_deleting", False), ("ERROR_DELETING", False),
         ("MANAGE_ERROR", False),
@@ -178,6 +178,9 @@ class SharesTableBase(tables.DataTable):
         ("CREATING", pgettext_lazy("Current status of share", u"Creating")),
         ("deleting", pgettext_lazy("Current status of share", u"Deleting")),
         ("DELETING", pgettext_lazy("Current status of share", u"Deleting")),
+        ("migrating", pgettext_lazy("Current status of share", u"Migrating")),
+        ("migrating_to", pgettext_lazy("Current status of share",
+                                       u"Migrating to")),
         ("error", pgettext_lazy("Current status of share", u"Error")),
         ("ERROR", pgettext_lazy("Current status of share", u"Error")),
         ("error_deleting", pgettext_lazy("Current status of share",
@@ -191,9 +194,9 @@ class SharesTableBase(tables.DataTable):
         ("extending_error", pgettext_lazy("Current status of share",
                                           u"Extending Error")),
     )
-    name = tables.Column("name",
-                         verbose_name=_("Name"),
-                         link="horizon:project:shares:detail")
+    name = tables.WrappingColumn(
+        "name", verbose_name=_("Name"),
+        link="horizon:project:shares:detail")
     description = tables.Column("description",
                                 verbose_name=_("Description"),
                                 truncate=40)
@@ -213,21 +216,23 @@ class SharesTableBase(tables.DataTable):
         return obj.name or obj.id
 
 
-class SharesFilterAction(tables.FilterAction):
-
-    def filter(self, table, shares, filter_string):
-        """Naive case-insensitive search."""
-        q = filter_string.lower()
-        return [share for share in shares
-                if q in share.name.lower()]
-
-
 class ManageRules(tables.LinkAction):
     name = "manage_rules"
     verbose_name = _("Manage Rules")
     url = "horizon:project:shares:manage_rules"
-    classes = ("btn-edit", )
+    classes = ("btn-edit",)
     policy_rules = (("share", "share:access_get_all"),)
+
+
+class ManageReplicas(tables.LinkAction):
+    name = "manage_replicas"
+    verbose_name = _("Manage Replicas")
+    url = "horizon:project:shares:manage_replicas"
+    classes = ("btn-edit",)
+    policy_rules = (("share", "share:replica_get_all"),)
+
+    def allowed(self, request, *args, **kwargs):
+        return manila.is_replication_enabled()
 
 
 class AddRule(tables.LinkAction):
@@ -235,6 +240,7 @@ class AddRule(tables.LinkAction):
     verbose_name = _("Add rule")
     url = 'horizon:project:shares:rule_add'
     classes = ("ajax-modal", "btn-create")
+    icon = "plus"
     policy_rules = (("share", "share:allow_access"),)
 
     def allowed(self, request, share=None):
@@ -286,8 +292,11 @@ class RulesTable(tables.DataTable):
         verbose_name = _("Rules")
         status_columns = ["status"]
         row_class = UpdateRuleRow
-        table_actions = (DeleteRule, AddRule)
-        row_actions = (DeleteRule, )
+        table_actions = (
+            AddRule,
+            DeleteRule)
+        row_actions = (
+            DeleteRule,)
 
 
 def get_share_network(share):
@@ -296,9 +305,9 @@ def get_share_network(share):
 
 
 class SharesTable(SharesTableBase):
-    name = tables.Column("name",
-                         verbose_name=_("Name"),
-                         link="horizon:project:shares:detail")
+    name = tables.WrappingColumn(
+        "name", verbose_name=_("Name"),
+        link="horizon:project:shares:detail")
     visibility = tables.Column(
         "is_public", verbose_name=_("Visibility"),
         help_text=("Whether this share visible to all tenants (public) or "
@@ -315,6 +324,15 @@ class SharesTable(SharesTableBase):
         verbose_name = _("Shares")
         status_columns = ["status"]
         row_class = UpdateRow
-        table_actions = (CreateShare, DeleteShare, SharesFilterAction)
-        row_actions = (EditShare, ExtendShare, snapshot_tables.CreateSnapshot,
-                       DeleteShare, ManageRules, EditShareMetadata)
+        table_actions = (
+            tables.NameFilterAction,
+            CreateShare,
+            DeleteShare)
+        row_actions = (
+            EditShare,
+            ExtendShare,
+            snapshot_tables.CreateSnapshot,
+            ManageRules,
+            ManageReplicas,
+            EditShareMetadata,
+            DeleteShare)

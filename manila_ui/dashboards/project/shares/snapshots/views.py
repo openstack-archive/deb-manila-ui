@@ -14,7 +14,6 @@
 
 from django.core.urlresolvers import reverse
 from django.core.urlresolvers import reverse_lazy
-from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import exceptions
@@ -33,6 +32,7 @@ from openstack_dashboard.usage import quotas
 class SnapshotDetailView(tabs.TabView):
     tab_group_class = snapshot_tabs.SnapshotDetailTabs
     template_name = 'project/shares/snapshots/snapshot_detail.html'
+    redirect_url = reverse_lazy('horizon:project:shares:index')
 
     def get_context_data(self, **kwargs):
         context = super(SnapshotDetailView, self).get_context_data(**kwargs)
@@ -53,10 +53,9 @@ class SnapshotDetailView(tabs.TabView):
             share = manila.share_get(self.request, snapshot.share_id)
             snapshot.share_name_or_id = share.name or share.id
         except Exception:
-            redirect = reverse('horizon:project:shares:index')
             exceptions.handle(self.request,
                               _('Unable to retrieve snapshot details.'),
-                              redirect=redirect)
+                              redirect=self.redirect_url)
         return snapshot
 
     def get_tabs(self, request, *args, **kwargs):
@@ -66,38 +65,41 @@ class SnapshotDetailView(tabs.TabView):
 
 class CreateSnapshotView(forms.ModalFormView):
     form_class = snapshot_forms.CreateSnapshotForm
+    form_id = "create_share_snapshot"
     template_name = 'project/shares/snapshots/create_snapshot.html'
-    success_url = reverse_lazy("horizon:project:shares:index")
+    modal_header = _("Create Share Snapshot")
+    modal_id = "create_share_snapshot_modal"
+    submit_label = _("Create Share Snapshot")
+    submit_url = "horizon:project:shares:create_snapshot"
+    success_url = reverse_lazy('horizon:project:shares:snapshots_tab')
     page_title = _('Create Share Snapshot')
 
     def get_context_data(self, **kwargs):
         context = super(CreateSnapshotView, self).get_context_data(**kwargs)
         context['share_id'] = self.kwargs['share_id']
         try:
-            share = manila.share_get(self.request, context['share_id'])
-            if (share.status == 'in-use'):
-                context['attached'] = True
-                context['form'].set_warning(_("This share is currently "
-                                              "attached to an instance. "
-                                              "In some cases, creating a "
-                                              "snapshot from an attached "
-                                              "share can result in a "
-                                              "corrupted snapshot."))
             context['usages'] = quotas.tenant_limit_usages(self.request)
         except Exception:
-            exceptions.handle(self.request,
-                              _('Unable to retrieve share information.'))
+            exceptions.handle(self.request, _('Unable to retrieve quotas.'))
         return context
 
     def get_initial(self):
+        self.submit_url = reverse(self.submit_url, kwargs=self.kwargs)
         return {'share_id': self.kwargs["share_id"]}
 
 
 class UpdateView(forms.ModalFormView):
     form_class = snapshot_forms.UpdateForm
+    form_id = "update_snapshot"
     template_name = 'project/shares/snapshots/update.html'
-    success_url = "horizon:project:shares:index"
+    modal_header = _("Edit Snapshot")
+    modal_id = "update_snapshot_modal"
+    submit_label = _("Edit")
+    submit_url = "horizon:project:shares:edit_snapshot"
+    success_url = reverse_lazy('horizon:project:shares:snapshots_tab')
+    page_title = _('Edit Snapshot')
 
+    @memoized.memoized_method
     def get_object(self):
         if not hasattr(self, "_object"):
             snap_id = self.kwargs['snapshot_id']
@@ -111,7 +113,8 @@ class UpdateView(forms.ModalFormView):
 
     def get_context_data(self, **kwargs):
         context = super(UpdateView, self).get_context_data(**kwargs)
-        context['snapshot'] = self.get_object()
+        args = (self.get_object().id,)
+        context['submit_url'] = reverse(self.submit_url, args=args)
         return context
 
     def get_initial(self):
@@ -119,7 +122,3 @@ class UpdateView(forms.ModalFormView):
         return {'snapshot_id': self.kwargs["snapshot_id"],
                 'name': snapshot.name,
                 'description': snapshot.description}
-
-    def get_success_url(self):
-        return "?".join([reverse(self.success_url),
-                         urlencode({"tab": "share_tabs__snapshots_tab"})])
