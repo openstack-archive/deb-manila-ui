@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
 # Copyright 2012 Nebula, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -32,7 +30,13 @@ from manila_ui.api import manila
 from manila_ui.dashboards.admin.shares import forms as project_forms
 from manila_ui.dashboards.admin.shares import tabs as project_tabs
 import manila_ui.dashboards.admin.shares.workflows as share_workflows
+from manila_ui.dashboards.project.shares.security_services import \
+    views as ss_views
+from manila_ui.dashboards.project.shares.share_networks import \
+    views as sn_views
 from manila_ui.dashboards.project.shares.shares import views as share_views
+from manila_ui.dashboards.project.shares.snapshots import \
+    views as snapshot_views
 from manila_ui.utils import filters
 
 filters = (filters.get_item,)
@@ -54,6 +58,18 @@ class DetailView(share_views.DetailView):
         return context
 
 
+class SecurityServiceDetailView(ss_views.Detail):
+    redirect_url = reverse_lazy('horizon:admin:shares:index')
+
+
+class ShareNetworkDetailView(sn_views.Detail):
+    redirect_url = reverse_lazy('horizon:admin:shares:index')
+
+
+class SnapshotDetailView(snapshot_views.SnapshotDetailView):
+    redirect_url = reverse_lazy('horizon:admin:shares:index')
+
+
 class ManageShareView(forms.ModalFormView):
     form_class = project_forms.ManageShare
     template_name = 'admin/shares/manage_share.html'
@@ -68,6 +84,155 @@ class ManageShareView(forms.ModalFormView):
     def get_context_data(self, **kwargs):
         context = super(ManageShareView, self).get_context_data(**kwargs)
         return context
+
+
+class MigrationStartView(forms.ModalFormView):
+    form_class = project_forms.MigrationStart
+    template_name = 'admin/shares/migration_start.html'
+    modal_header = _("Migrate Share")
+    form_id = "migration_start_share"
+    modal_id = "migration_start_share_modal"
+    submit_label = _("Start migration")
+    success_url = reverse_lazy('horizon:admin:shares:index')
+    submit_url = 'horizon:admin:shares:migration_start'
+    cancel_url = reverse_lazy('horizon:admin:shares:index')
+    page_title = _("Migrate a Share")
+
+    def get_context_data(self, **kwargs):
+        context = super(MigrationStartView, self).get_context_data(**kwargs)
+        args = (self.kwargs['share_id'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    @memoized.memoized_method
+    def get_data(self):
+        try:
+            share_id = self.kwargs['share_id']
+            share = manila.share_get(self.request, share_id)
+        except Exception:
+            exceptions.handle(
+                self.request, _('Unable to retrieve share details.'),
+                redirect=self.success_url)
+        return share
+
+    def get_initial(self):
+        share = self.get_data()
+        return {
+            'share_id': self.kwargs["share_id"],
+            'name': share.name,
+        }
+
+
+class MigrationCompleteView(forms.ModalFormView):
+    form_class = project_forms.MigrationComplete
+    template_name = 'admin/shares/migration_complete.html'
+    modal_header = _("Confirm Migration Completion of Share")
+    form_id = "migration_complete_share"
+    modal_id = "migration_complete_share_modal"
+    submit_label = _("Complete Migration")
+    success_url = reverse_lazy('horizon:admin:shares:index')
+    submit_url = 'horizon:admin:shares:migration_complete'
+    cancel_url = reverse_lazy('horizon:admin:shares:index')
+    page_title = _("Complete migration of a Share")
+
+    def get_context_data(self, **kwargs):
+        context = super(MigrationCompleteView, self).get_context_data(**kwargs)
+        args = (self.kwargs['share_id'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    @memoized.memoized_method
+    def get_data(self):
+        try:
+            share_id = self.kwargs['share_id']
+            share = manila.share_get(self.request, share_id)
+        except Exception:
+            exceptions.handle(
+                self.request, _('Unable to retrieve share details.'),
+                redirect=self.success_url)
+        return share
+
+    def get_initial(self):
+        share = self.get_data()
+        return {
+            'share_id': self.kwargs["share_id"],
+            'name': share.name,
+        }
+
+
+class MigrationCancelView(forms.ModalFormView):
+    form_class = project_forms.MigrationCancel
+    template_name = 'admin/shares/migration_cancel.html'
+    modal_header = _("Confirm Migration Cancelling of Share")
+    form_id = "migration_cancel_share"
+    modal_id = "migration_cancel_share_modal"
+    submit_label = _("Cancel Migration")
+    success_url = reverse_lazy('horizon:admin:shares:index')
+    submit_url = 'horizon:admin:shares:migration_cancel'
+    cancel_url = reverse_lazy('horizon:admin:shares:index')
+    page_title = _("Cancel migration of a Share")
+
+    def get_context_data(self, **kwargs):
+        context = super(MigrationCancelView, self).get_context_data(**kwargs)
+        args = (self.kwargs['share_id'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    @memoized.memoized_method
+    def get_data(self):
+        try:
+            share_id = self.kwargs['share_id']
+            share = manila.share_get(self.request, share_id)
+        except Exception:
+            exceptions.handle(
+                self.request, _('Unable to retrieve share details.'),
+                redirect=self.success_url)
+        return share
+
+    def get_initial(self):
+        share = self.get_data()
+        return {
+            'share_id': self.kwargs["share_id"],
+            'name': share.name,
+        }
+
+
+class MigrationGetProgressView(forms.ModalFormView):
+    form_class = project_forms.MigrationGetProgress
+    template_name = 'admin/shares/migration_get_progress.html'
+    modal_header = _("Confirm Obtaining migration progress of Share")
+    form_id = "migration_get_progress_share"
+    modal_id = "migration_get_progress_share_modal"
+    submit_label = _("Obtain Progress")
+    success_url = reverse_lazy('horizon:admin:shares:index')
+    submit_url = 'horizon:admin:shares:migration_get_progress'
+    cancel_url = reverse_lazy('horizon:admin:shares:index')
+    page_title = _("Obtain migration progress of a Share")
+
+    def get_context_data(self, **kwargs):
+        context = super(MigrationGetProgressView,
+                        self).get_context_data(**kwargs)
+        args = (self.kwargs['share_id'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    @memoized.memoized_method
+    def get_data(self):
+        try:
+            share_id = self.kwargs['share_id']
+            share = manila.share_get(self.request, share_id)
+        except Exception:
+            exceptions.handle(
+                self.request, _('Unable to retrieve share details.'),
+                redirect=self.success_url)
+        return share
+
+    def get_initial(self):
+        share = self.get_data()
+        return {
+            'share_id': self.kwargs["share_id"],
+            'name': share.name,
+        }
 
 
 class UnmanageShareView(forms.ModalFormView):
@@ -109,9 +274,13 @@ class UnmanageShareView(forms.ModalFormView):
 
 class CreateShareTypeView(forms.ModalFormView):
     form_class = project_forms.CreateShareType
+    form_id = "create_share_type"
     template_name = 'admin/shares/create_share_type.html'
+    modal_header = _("Create Share Type")
+    submit_label = _("Create")
+    submit_url = reverse_lazy("horizon:admin:shares:create_type")
     success_url = 'horizon:admin:shares:index'
-    page_title = _("Create a Share Type")
+    page_title = _("Create Share Type")
 
     def get_success_url(self):
         return reverse(self.success_url)
@@ -135,7 +304,12 @@ class ManageShareTypeAccessView(workflows.WorkflowView):
 
 class UpdateShareTypeView(forms.ModalFormView):
     form_class = project_forms.UpdateShareType
+    form_id = "update_share_type"
     template_name = "admin/shares/update_share_type.html"
+    modal_header = _("Update Share Type")
+    modal_id = "update_share_type_modal"
+    submit_label = _("Update")
+    submit_url = "horizon:admin:shares:update_type"
     success_url = reverse_lazy("horizon:admin:shares:index")
     page_title = _("Update Share Type")
 
@@ -152,7 +326,8 @@ class UpdateShareTypeView(forms.ModalFormView):
 
     def get_context_data(self, **kwargs):
         context = super(UpdateShareTypeView, self).get_context_data(**kwargs)
-        context["share_type"] = self.get_object()
+        args = (self.get_object().id,)
+        context['submit_url'] = reverse(self.submit_url, args=args)
         return context
 
     def get_initial(self):
@@ -178,6 +353,7 @@ class ShareServDetail(tabs.TabView):
             {'server_name': share_server_display_name}
         return context
 
+    @memoized.memoized_method
     def get_data(self):
         try:
             share_serv_id = self.kwargs['share_server_id']
@@ -192,7 +368,7 @@ class ShareServDetail(tabs.TabView):
                 share_serv.share_network_id = None
 
         except Exception:
-            redirect = reverse('horizon:project:shares:index')
+            redirect = reverse('horizon:admin:shares:index')
             exceptions.handle(self.request,
                               _('Unable to retrieve share server details.'),
                               redirect=redirect)
@@ -202,3 +378,48 @@ class ShareServDetail(tabs.TabView):
         share_server = self.get_data()
         return self.tab_group_class(request, share_server=share_server,
                                     **kwargs)
+
+
+class ShareInstanceDetailView(tabs.TabView):
+    tab_group_class = project_tabs.ShareInstanceDetailTabs
+    template_name = 'admin/shares/share_instance_detail.html'
+
+    def _calculate_size_of_longest_export_location(self, export_locations):
+        size = 40
+        for export_location in export_locations:
+            if len(export_location["path"]) > size:
+                size = len(export_location["path"])
+        return size
+
+    def get_context_data(self, **kwargs):
+        context = super(self.__class__, self).get_context_data(**kwargs)
+        share_instance = self.get_data()
+        context["share_instance"] = share_instance
+        context["page_title"] = (
+            _("Share Instance Details: %s") % share_instance.id)
+        return context
+
+    @memoized.memoized_method
+    def get_data(self):
+        try:
+            share_instance_id = self.kwargs['share_instance_id']
+            share_instance = manila.share_instance_get(
+                self.request, share_instance_id)
+            share_instance.export_locations = (
+                manila.share_instance_export_location_list(
+                    self.request, share_instance_id))
+            share_instance.el_size = (
+                self._calculate_size_of_longest_export_location(
+                    share_instance.export_locations))
+            return share_instance
+        except Exception:
+            redirect = reverse('horizon:admin:shares:index')
+            exceptions.handle(
+                self.request,
+                _('Unable to retrieve share instance details.'),
+                redirect=redirect)
+
+    def get_tabs(self, request, *args, **kwargs):
+        share_instance = self.get_data()
+        return self.tab_group_class(
+            request, share_instance=share_instance, **kwargs)

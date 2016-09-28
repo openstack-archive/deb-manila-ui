@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
 # Copyright 2012 Nebula, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -14,9 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from django.conf.urls import patterns  # noqa
 from django.conf.urls import url  # noqa
 
+from manila_ui.api import manila
+from manila_ui.dashboards.project.shares.replicas\
+    import views as replica_views
 from manila_ui.dashboards.project.shares.security_services \
     import views as security_services_views
 from manila_ui.dashboards.project.shares.share_networks \
@@ -28,9 +28,11 @@ from manila_ui.dashboards.project.shares.snapshots\
 from manila_ui.dashboards.project.shares import views
 
 
-urlpatterns = patterns(
-    'openstack_dashboard.dashboards.project.shares.views',
+urlpatterns = [
     url(r'^$', views.IndexView.as_view(), name='index'),
+    url(r'^\?tab=share_tabs__snapshots_tab$',
+        views.IndexView.as_view(),
+        name='snapshots_tab'),
     url(r'^create/$', shares_views.CreateView.as_view(), name='create'),
     url(r'^create_security_service$',
         security_services_views.CreateView.as_view(),
@@ -38,16 +40,16 @@ urlpatterns = patterns(
     url(r'^create_share_network$',
         share_networks_views.Create.as_view(),
         name='create_share_network'),
-    url(r'^share_network/(?P<share_network_id>[^/]+)/update$',
+    url(r'^share_networks/(?P<share_network_id>[^/]+)/update$',
         share_networks_views.Update.as_view(),
         name='update_share_network'),
-    url(r'^share_network/(?P<share_network_id>[^/]+)$',
+    url(r'^share_networks/(?P<share_network_id>[^/]+)$',
         share_networks_views.Detail.as_view(),
         name='share_network_detail'),
-    url(r'^security_service/(?P<sec_service_id>[^/]+)/update/$',
+    url(r'^security_services/(?P<sec_service_id>[^/]+)/update/$',
         security_services_views.UpdateView.as_view(),
         name='update_security_service'),
-    url(r'^security_service/(?P<sec_service_id>[^/]+)$',
+    url(r'^security_services/(?P<sec_service_id>[^/]+)$',
         security_services_views.Detail.as_view(),
         name='security_service_detail'),
     url(r'^snapshots/(?P<snapshot_id>[^/]+)$',
@@ -77,4 +79,20 @@ urlpatterns = patterns(
     url(r'^(?P<share_id>[^/]+)/extend/$',
         shares_views.ExtendView.as_view(),
         name='extend'),
-)
+]
+
+if manila.is_replication_enabled():
+    urlpatterns.extend([
+        url(r'^(?P<share_id>[^/]+)/create_replica/$',
+            replica_views.CreateReplicaView.as_view(),
+            name='create_replica'),
+        url(r'^(?P<share_id>[^/]+)/replicas/$',
+            replica_views.ManageReplicasView.as_view(),
+            name='manage_replicas'),
+        url(r'^replica/(?P<replica_id>[^/]+)$',
+            replica_views.DetailReplicaView.as_view(),
+            name='replica_detail'),
+        url(r'^replica/(?P<replica_id>[^/]+)/set_replica_as_active$',
+            replica_views.SetReplicaAsActiveView.as_view(),
+            name='set_replica_as_active'),
+    ])

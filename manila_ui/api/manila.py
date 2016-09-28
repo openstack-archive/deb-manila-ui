@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
 # Copyright 2012 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
@@ -28,12 +26,15 @@ from manilaclient import client as manila_client
 import six
 
 from horizon import exceptions
+from horizon.utils.memoized import memoized  # noqa
 from openstack_dashboard.api import base
+from openstack_dashboard.api import nova
+
 
 LOG = logging.getLogger(__name__)
 
 MANILA_UI_USER_AGENT_REPR = "manila_ui_plugin_for_horizon"
-MANILA_VERSION = "2.5"  # requires manilaclient 1.3.0 or newer
+MANILA_VERSION = "2.22"  # requires manilaclient 1.10.0 or newer
 MANILA_SERVICE_TYPE = "sharev2"
 
 # API static values
@@ -65,6 +66,7 @@ def manilaclient(request):
     )
     c.client.auth_token = request.user.token.id
     c.client.management_url = manila_url
+
     return c
 
 
@@ -104,6 +106,15 @@ def share_rules_list(request, share_id):
     return manilaclient(request).shares.access_list(share_id)
 
 
+def share_export_location_list(request, share_id):
+    return manilaclient(request).share_export_locations.list(share_id)
+
+
+def share_instance_export_location_list(request, share_instance_id):
+    return manilaclient(request).share_instance_export_locations.list(
+        share_instance_id)
+
+
 def share_allow(request, share_id, access_type, access_to, access_level):
     return manilaclient(request).shares.allow(
         share_id, access_type, access_to, access_level)
@@ -115,7 +126,7 @@ def share_deny(request, share_id, rule_id):
 
 def share_manage(request, service_host, protocol, export_path,
                  driver_options=None, share_type=None,
-                 name=None, description=None):
+                 name=None, description=None, is_public=False):
     return manilaclient(request).shares.manage(
         service_host=service_host,
         protocol=protocol,
@@ -124,7 +135,35 @@ def share_manage(request, service_host, protocol, export_path,
         share_type=share_type,
         name=name,
         description=description,
+        is_public=is_public,
     )
+
+
+def migration_start(request, share, dest_host, force_host_assisted_migration,
+                    writable, preserve_metadata, nondisruptive,
+                    new_share_network_id, new_share_type_id):
+    return manilaclient(request).shares.migration_start(
+        share,
+        host=dest_host,
+        force_host_assisted_migration=force_host_assisted_migration,
+        writable=writable,
+        preserve_metadata=preserve_metadata,
+        nondisruptive=nondisruptive,
+        new_share_network_id=new_share_network_id,
+        new_share_type_id=new_share_type_id
+    )
+
+
+def migration_complete(request, share):
+    return manilaclient(request).shares.migration_complete(share)
+
+
+def migration_get_progress(request, share):
+    return manilaclient(request).shares.migration_get_progress(share)
+
+
+def migration_cancel(request, share):
+    return manilaclient(request).shares.migration_cancel(share)
 
 
 def share_unmanage(request, share):
@@ -140,8 +179,11 @@ def share_snapshot_get(request, snapshot_id):
     return manilaclient(request).share_snapshots.get(snapshot_id)
 
 
-def share_snapshot_update(request, snapshot_id, **kwargs):
-    return manilaclient(request).share_snapshots.update(snapshot_id, **kwargs)
+def share_snapshot_update(request, snapshot_id, name, description):
+    snapshot_data = {'display_name': name,
+                     'display_description': description}
+    return manilaclient(request).share_snapshots.update(
+        snapshot_id, **snapshot_data)
 
 
 def share_snapshot_list(request, detailed=True, search_opts=None,
@@ -325,6 +367,58 @@ def share_type_access_remove(request, share_type_id, project_id):
         share_type_id, project_id)
 
 
+def share_replica_list(request, share=None):
+    return manilaclient(request).share_replicas.list(share)
+
+
+def share_replica_create(request, share, availability_zone,
+                         share_network=None):
+    return manilaclient(request).share_replicas.create(
+        share,
+        availability_zone=availability_zone,
+        share_network=share_network)
+
+
+def share_replica_get(request, replica):
+    return manilaclient(request).share_replicas.get(replica)
+
+
+def share_replica_delete(request, replica):
+    return manilaclient(request).share_replicas.delete(replica)
+
+
+def share_replica_promote(request, replica):
+    return manilaclient(request).share_replicas.promote(replica)
+
+
+def share_replica_reset_status(request, replica, status):
+    return manilaclient(request).share_replicas.reset_state(
+        replica, status)
+
+
+def share_replica_reset_state(request, replica, state):
+    return manilaclient(request).share_replicas.reset_replica_state(
+        replica, state)
+
+
+def share_replica_resync(request, replica):
+    return manilaclient(request).share_replicas.resync(replica)
+
+
+def share_valid_availability_zones_for_new_replica(request, share):
+    availability_zones = (
+        set([az.zoneName
+             for az in nova.availability_zone_list(request)])
+    )
+
+    az_with_replicas = (
+        set([r.availability_zone
+             for r in share_replica_list(request, share)])
+    )
+
+    return availability_zones - az_with_replicas
+
+
 def tenant_absolute_limits(request):
     limits = manilaclient(request).limits.get().absolute
     limits_dict = {}
@@ -335,3 +429,23 @@ def tenant_absolute_limits(request):
         else:
             limits_dict[limit.name] = limit.value
     return limits_dict
+
+
+def share_instance_list(request):
+    return manilaclient(request).share_instances.list()
+
+
+def share_instance_get(request, share_instance_id):
+    return manilaclient(request).share_instances.get(share_instance_id)
+
+
+@memoized
+def is_replication_enabled():
+    manila_config = getattr(settings, 'OPENSTACK_MANILA_FEATURES', {})
+    return manila_config.get('enable_replication', True)
+
+
+@memoized
+def is_migration_enabled():
+    manila_config = getattr(settings, 'OPENSTACK_MANILA_FEATURES', {})
+    return manila_config.get('enable_migration', True)

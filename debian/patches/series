@@ -1,3 +1,1 @@
-do-not-import-unittest-from-django-utils.patch
-remove-load-url-from-future.patch
 add-MANIFEST.in-to-package-missing-files.patch

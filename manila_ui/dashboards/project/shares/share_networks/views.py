@@ -13,10 +13,12 @@
 #    under the License.
 
 from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
 from horizon import exceptions
 from horizon import forms
 from horizon import tabs
+from horizon.utils import memoized
 from horizon import workflows
 
 from manila_ui.api import manila
@@ -27,6 +29,7 @@ from manila_ui.dashboards.project.shares.share_networks import tabs \
     as share_net_tabs
 from manila_ui.dashboards.project.shares.share_networks \
     import workflows as share_net_workflows
+from manila_ui.dashboards import utils
 
 from openstack_dashboard.api import base
 from openstack_dashboard.api import neutron
@@ -49,7 +52,11 @@ class Update(workflows.WorkflowView):
 
 class Create(forms.ModalFormView):
     form_class = share_net_forms.Create
+    form_id = "create_share_network"
     template_name = 'project/shares/share_networks/create_share_network.html'
+    modal_header = _("Create Share Network")
+    submit_label = _("Create")
+    submit_url = reverse_lazy("horizon:project:shares:create_share_network")
     success_url = 'horizon:project:shares:index'
     page_title = _('Create Share Network')
 
@@ -60,6 +67,7 @@ class Create(forms.ModalFormView):
 class Detail(tabs.TabView):
     tab_group_class = share_net_tabs.ShareNetworkDetailTabs
     template_name = 'project/shares/share_networks/detail.html'
+    redirect_url = reverse_lazy('horizon:project:shares:index')
 
     def get_context_data(self, **kwargs):
         context = super(Detail, self).get_context_data(**kwargs)
@@ -72,6 +80,7 @@ class Detail(tabs.TabView):
             {'network_display_name': share_network_display_name}
         return context
 
+    @memoized.memoized_method
     def get_data(self):
         try:
             share_net_id = self.kwargs['share_network_id']
@@ -96,19 +105,20 @@ class Detail(tabs.TabView):
                 except Exception:
                     share_net.nova_net = _("Unknown")
 
-            share_net.sec_services = \
-                manila.share_network_security_service_list(self.request,
-                                                           share_net_id)
+            share_net.sec_services = (
+                manila.share_network_security_service_list(
+                    self.request, share_net_id))
+            for ss in share_net.sec_services:
+                ss.type = utils.get_nice_security_service_type(ss)
             server_search_opts = {'share_network_id': share_net_id}
             share_servs = manila.share_server_list(
                 self.request,
                 search_opts=server_search_opts)
             share_net.share_servers = share_servs
         except Exception:
-            redirect = reverse('horizon:project:shares:index')
             exceptions.handle(self.request,
                               _('Unable to retrieve share network details.'),
-                              redirect=redirect)
+                              redirect=self.redirect_url)
         return share_net
 
     def get_tabs(self, request, *args, **kwargs):

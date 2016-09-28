@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
 # Copyright 2012 Nebula, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,10 +11,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-"""
-Views for managing shares.
-"""
 
 from django.core.urlresolvers import reverse
 from django.core.urlresolvers import reverse_lazy
@@ -58,6 +52,14 @@ class DetailView(tabs.TabView):
     tab_group_class = shares_tabs.ShareDetailTabs
     template_name = 'project/shares/shares/detail.html'
 
+    def _calculate_size_of_longest_export_location(self, export_locations):
+        size = 40
+        for export_location in export_locations:
+            current_size = len(export_location["path"])
+            if current_size > size:
+                size = current_size
+        return size
+
     def get_context_data(self, **kwargs):
         context = super(DetailView, self).get_context_data(**kwargs)
         share = self.get_data()
@@ -75,6 +77,10 @@ class DetailView(tabs.TabView):
             share_id = self.kwargs['share_id']
             share = manila.share_get(self.request, share_id)
             share.rules = manila.share_rules_list(self.request, share_id)
+            share.export_locations = manila.share_export_location_list(
+                self.request, share_id)
+            share.el_size = self._calculate_size_of_longest_export_location(
+                share.export_locations)
         except Exception:
             redirect = reverse('horizon:project:shares:index')
             exceptions.handle(self.request,
@@ -89,7 +95,12 @@ class DetailView(tabs.TabView):
 
 class CreateView(forms.ModalFormView):
     form_class = share_form.CreateForm
+    form_id = "create_share"
     template_name = 'project/shares/shares/create.html'
+    modal_header = _("Create Share")
+    modal_id = "create_share_modal"
+    submit_label = _("Create")
+    submit_url = reverse_lazy("horizon:project:shares:create")
     success_url = reverse_lazy("horizon:project:shares:index")
     page_title = _('Create a Share')
 
@@ -104,7 +115,12 @@ class CreateView(forms.ModalFormView):
 
 class UpdateView(forms.ModalFormView):
     form_class = share_form.UpdateForm
+    form_id = "update_share"
     template_name = 'project/shares/shares/update.html'
+    modal_header = _("Edit Share")
+    modal_id = "update_share_modal"
+    submit_label = _("Edit")
+    submit_url = "horizon:project:shares:update"
     success_url = reverse_lazy("horizon:project:shares:index")
     page_title = _('Edit Share')
 
@@ -121,10 +137,10 @@ class UpdateView(forms.ModalFormView):
 
     def get_context_data(self, **kwargs):
         context = super(UpdateView, self).get_context_data(**kwargs)
-        context['share'] = self.get_object()
         return context
 
     def get_initial(self):
+        self.submit_url = reverse(self.submit_url, kwargs=self.kwargs)
         share = self.get_object()
         return {'share_id': self.kwargs["share_id"],
                 'name': share.name,
@@ -133,15 +149,20 @@ class UpdateView(forms.ModalFormView):
 
 class UpdateMetadataView(forms.ModalFormView):
     form_class = share_form.UpdateMetadataForm
+    form_id = "update_share_metadata"
     template_name = 'project/shares/shares/update_metadata.html'
+    modal_header = _("Edit Share Metadata")
+    modal_id = "update_share_metadata_modal"
+    submit_label = _("Save Changes")
+    submit_url = "horizon:project:shares:update_metadata"
     success_url = reverse_lazy("horizon:project:shares:index")
     page_title = _('Edit Share Metadata')
 
     def get_object(self):
         if not hasattr(self, "_object"):
-            vol_id = self.kwargs['share_id']
+            sh_id = self.kwargs['share_id']
             try:
-                self._object = manila.share_get(self.request, vol_id)
+                self._object = manila.share_get(self.request, sh_id)
             except Exception:
                 msg = _('Unable to retrieve share.')
                 url = reverse('horizon:project:shares:index')
@@ -150,7 +171,8 @@ class UpdateMetadataView(forms.ModalFormView):
 
     def get_context_data(self, **kwargs):
         context = super(UpdateMetadataView, self).get_context_data(**kwargs)
-        context['share'] = self.get_object()
+        args = (self.get_object().id,)
+        context['submit_url'] = reverse(self.submit_url, args=args)
         return context
 
     def get_initial(self):
@@ -161,7 +183,13 @@ class UpdateMetadataView(forms.ModalFormView):
 
 class AddRuleView(forms.ModalFormView):
     form_class = share_form.AddRule
+    form_id = "rule_add"
     template_name = 'project/shares/shares/rule_add.html'
+    modal_header = _("Add Rule")
+    modal_id = "rule_add_modal"
+    submit_label = _("Add")
+    submit_url = "horizon:project:shares:rule_add"
+    success_url = reverse_lazy("horizon:project:shares:index")
     page_title = _('Add Rule')
 
     def get_object(self):
@@ -177,7 +205,8 @@ class AddRuleView(forms.ModalFormView):
 
     def get_context_data(self, **kwargs):
         context = super(AddRuleView, self).get_context_data(**kwargs)
-        context['share'] = self.get_object()
+        args = (self.get_object().id,)
+        context['submit_url'] = reverse(self.submit_url, args=args)
         return context
 
     def get_initial(self):
@@ -220,25 +249,26 @@ class ManageRulesView(tables.DataTableView):
 
 class ExtendView(forms.ModalFormView):
     form_class = share_form.ExtendForm
+    form_id = "extend_share"
     template_name = 'project/shares/shares/extend.html'
+    modal_header = _("Extend Share")
+    modal_id = "extend_share_modal"
+    submit_label = _("Extend")
+    submit_url = "horizon:project:shares:extend"
     success_url = reverse_lazy("horizon:project:shares:index")
     page_title = _('Extend Share')
 
+    @memoized.memoized_method
     def get_object(self):
-        if not hasattr(self, "_object"):
-            share_id = self.kwargs['share_id']
-            try:
-                self._object = manila.share_get(self.request, share_id)
-            except Exception:
-                msg = _('Unable to retrieve share.')
-                url = reverse('horizon:project:shares:index')
-                exceptions.handle(self.request, msg, redirect=url)
-        return self._object
+        try:
+            return manila.share_get(self.request, self.kwargs['share_id'])
+        except Exception:
+            exceptions.handle(self.request, _('Unable to retrieve share.'))
 
     def get_context_data(self, **kwargs):
         context = super(ExtendView, self).get_context_data(**kwargs)
-        context['share'] = self.get_object()
-
+        args = (self.get_object().id,)
+        context['submit_url'] = reverse(self.submit_url, args=args)
         try:
             context['usages'] = quotas.tenant_limit_usages(self.request)
         except Exception:
@@ -248,8 +278,11 @@ class ExtendView(forms.ModalFormView):
 
     def get_initial(self):
         share = self.get_object()
-        return {'share_id': self.kwargs["share_id"],
-                'name': share.name,
-                'orig_size': share.size,
-                'new_size': int(share.size) + 1
-                }
+        if not share or isinstance(share, Exception):
+            raise exceptions.NotFound()
+        return {
+            'share_id': self.kwargs["share_id"],
+            'name': share.name or share.id,
+            'orig_size': share.size,
+            'new_size': int(share.size) + 1,
+        }

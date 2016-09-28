@@ -14,7 +14,7 @@
 # under the License.
 
 """
-Views for managing shares.
+Views for managing snapshots.
 """
 
 from django.core.urlresolvers import reverse
@@ -26,7 +26,6 @@ from django.utils.translation import ugettext_lazy as _
 from horizon import exceptions
 from horizon import forms
 from horizon import messages
-from horizon.utils.memoized import memoized  # noqa
 
 from manila_ui.api import manila
 
@@ -47,19 +46,9 @@ class CreateSnapshotForm(forms.SelfHandlingForm):
 
     def handle(self, request, data):
         try:
-            share = manila.share_get(request, data['share_id'])
-            force = False
+            snapshot = manila.share_snapshot_create(
+                request, data['share_id'], data['name'], data['description'])
             message = _('Creating share snapshot "%s".') % data['name']
-            if share.status == 'in-use':
-                force = True
-                message = _('Forcing to create snapshot "%s" '
-                            'from attached share.') % data['name']
-            snapshot = manila.share_snapshot_create(request,
-                                                    data['share_id'],
-                                                    data['name'],
-                                                    data['description'],
-                                                    force=force)
-
             messages.success(request, message)
             return snapshot
         except Exception:
@@ -70,23 +59,17 @@ class CreateSnapshotForm(forms.SelfHandlingForm):
 
 
 class UpdateForm(forms.SelfHandlingForm):
-    name = forms.CharField(max_length="255", label=_("Share Name"))
+    name = forms.CharField(max_length="255", label=_("Snapshot Name"))
     description = forms.CharField(widget=forms.Textarea,
                                   label=_("Description"), required=False)
 
     def handle(self, request, data):
         snapshot_id = self.initial['snapshot_id']
         try:
-            share = manila.share_snapshot_get(self.request, snapshot_id)
             manila.share_snapshot_update(
-                request, share, display_name=data['name'],
-                display_description=data['description'])
+                request, snapshot_id, data['name'], data['description'])
             message = _('Updating snapshot "%s"') % data['name']
             messages.success(request, message)
             return True
         except Exception:
-            redirect = "?".join([reverse("horizon:project:shares:index"),
-                                 urlencode({"tab": "snapshots"})])
-            exceptions.handle(request,
-                              _('Unable to update snapshot.'),
-                              redirect=redirect)
+            exceptions.handle(request, _('Unable to update snapshot.'))
