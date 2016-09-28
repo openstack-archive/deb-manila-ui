@@ -36,6 +36,7 @@ class CreateShareType(tables.LinkAction):
     verbose_name = _("Create Share Type")
     url = "horizon:admin:shares:create_type"
     classes = ("ajax-modal", "btn-create")
+    icon = "plus"
     policy_rules = (("share", "share_extension:types_manage"),)
 
 
@@ -65,6 +66,67 @@ class ManageShareTypeAccess(tables.LinkAction):
         if datum:
             project_id = getattr(datum, "os-share-tenant-attr:tenant_id", None)
         return {"project_id": project_id}
+
+
+class MigrationStartAction(tables.LinkAction):
+    name = "migration_start"
+    verbose_name = _("Migrate Share")
+    url = "horizon:admin:shares:migration_start"
+    classes = ("ajax-modal",)
+    policy_rules = (("share", "migration_start"),)
+    ajax = True
+
+    def allowed(self, request, share=None):
+        if share:
+            return (share.status.upper() == "AVAILABLE" and
+                    not getattr(share, 'has_snapshot', False) and
+                    manila.is_migration_enabled())
+        return False
+
+
+class MigrationCompleteAction(tables.LinkAction):
+    name = "migration_complete"
+    verbose_name = _("Complete migration")
+    url = "horizon:admin:shares:migration_complete"
+    classes = ("ajax-modal",)
+    policy_rules = (("share", "migration_complete"),)
+    ajax = True
+
+    def allowed(self, request, share=None):
+        if (share and share.status.upper() == "MIGRATING" and
+                manila.is_migration_enabled()):
+            return True
+        return False
+
+
+class MigrationCancelAction(tables.LinkAction):
+    name = "migration_cancel"
+    verbose_name = _("Cancel migration")
+    url = "horizon:admin:shares:migration_cancel"
+    classes = ("ajax-modal",)
+    policy_rules = (("share", "migration_cancel"),)
+    ajax = True
+
+    def allowed(self, request, share=None):
+        if (share and share.status.upper() == "MIGRATING" and
+                manila.is_migration_enabled()):
+            return True
+        return False
+
+
+class MigrationGetProgressAction(tables.LinkAction):
+    name = "migration_get_progress"
+    verbose_name = _("Get migration progress")
+    url = "horizon:admin:shares:migration_get_progress"
+    classes = ("ajax-modal",)
+    policy_rules = (("share", "migration_get_progress"),)
+    ajax = True
+
+    def allowed(self, request, share=None):
+        if (share and share.status.upper() == "MIGRATING" and
+                manila.is_migration_enabled()):
+            return True
+        return False
 
 
 class ManageShareAction(tables.LinkAction):
@@ -108,16 +170,8 @@ class UpdateShareType(tables.LinkAction):
         return {"project_id": project_id}
 
 
-class ShareTypesFilterAction(tables.FilterAction):
-
-    def filter(self, table, share_types, filter_string):
-        """Naive case-insensitive search."""
-        q = filter_string.lower()
-        return [st for st in share_types if q in st.name.lower()]
-
-
 class ShareTypesTable(tables.DataTable):
-    name = tables.Column("name", verbose_name=_("Name"))
+    name = tables.WrappingColumn("name", verbose_name=_("Name"))
     extra_specs = tables.Column("extra_specs", verbose_name=_("Extra specs"), )
     visibility = tables.Column(
         "is_public", verbose_name=_("Visibility"),
@@ -132,32 +186,36 @@ class ShareTypesTable(tables.DataTable):
     class Meta(object):
         name = "share_types"
         verbose_name = _("Share Types")
-        table_actions = (CreateShareType, DeleteShareType,
-                         ShareTypesFilterAction, )
+        table_actions = (
+            tables.NameFilterAction,
+            CreateShareType,
+            DeleteShareType)
         row_actions = (
-            UpdateShareType, DeleteShareType,
+            UpdateShareType,
             ManageShareTypeAccess,
-        )
+            DeleteShareType)
 
 
-class SharesFilterAction(tables.FilterAction):
+class ManageReplicas(tables.LinkAction):
+    name = "manage_replicas"
+    verbose_name = _("Manage Replicas")
+    url = "horizon:admin:shares:manage_replicas"
+    classes = ("btn-edit",)
+    policy_rules = (("share", "share:replica_get_all"),)
 
-    def filter(self, table, shares, filter_string):
-        """Naive case-insensitive search."""
-        q = filter_string.lower()
-        return [share for share in shares
-                if q in share.name.lower()]
+    def allowed(self, request, *args, **kwargs):
+        return manila.is_replication_enabled()
 
 
 class SharesTable(shares_tables.SharesTable):
-    name = tables.Column("name",
-                         verbose_name=_("Name"),
-                         link="horizon:admin:shares:detail")
+    name = tables.WrappingColumn(
+        "name", verbose_name=_("Name"),
+        link="horizon:admin:shares:detail")
     host = tables.Column("host", verbose_name=_("Host"))
-    tenant = tables.Column("tenant_name", verbose_name=_("Project"))
+    project = tables.Column("project_name", verbose_name=_("Project"))
 
     def get_share_server_link(share):
-        if hasattr(share, 'share_server_id'):
+        if getattr(share, 'share_server_id', None):
             return reverse("horizon:admin:shares:share_server_detail",
                            args=(share.share_server_id,))
         else:
@@ -173,14 +231,17 @@ class SharesTable(shares_tables.SharesTable):
         status_columns = ["status"]
         row_class = shares_tables.UpdateRow
         table_actions = (
-            shares_tables.DeleteShare,
+            tables.NameFilterAction,
             ManageShareAction,
-            SharesFilterAction,
-        )
+            shares_tables.DeleteShare)
         row_actions = (
-            shares_tables.DeleteShare,
+            ManageReplicas,
+            MigrationStartAction,
+            MigrationCompleteAction,
+            MigrationGetProgressAction,
+            MigrationCancelAction,
             UnmanageShareAction,
-        )
+            shares_tables.DeleteShare)
         columns = (
             'tenant', 'host', 'name', 'size', 'status', 'visibility',
             'share_type', 'protocol', 'share_server',
@@ -235,9 +296,9 @@ class SnapshotsTable(tables.DataTable):
         ("creating", pgettext_lazy("Current status of snapshot", u"Creating")),
         ("error", pgettext_lazy("Current status of snapshot", u"Error")),
     )
-    name = tables.Column("name",
-                         verbose_name=_("Name"),
-                         link="horizon:admin:shares:snapshot-detail")
+    name = tables.WrappingColumn(
+        "name", verbose_name=_("Name"),
+        link="horizon:admin:shares:snapshot-detail")
     description = tables.Column("description",
                                 verbose_name=_("Description"),
                                 truncate=40)
@@ -262,8 +323,11 @@ class SnapshotsTable(tables.DataTable):
         verbose_name = _("Snapshots")
         status_columns = ["status"]
         row_class = snapshot_tables.UpdateRow
-        table_actions = (DeleteSnapshot, )
-        row_actions = (DeleteSnapshot, )
+        table_actions = (
+            tables.NameFilterAction,
+            DeleteSnapshot)
+        row_actions = (
+            DeleteSnapshot,)
 
 
 class DeleteSecurityService(tables.DeleteAction):
@@ -295,10 +359,10 @@ class DeleteShareServer(tables.DeleteAction):
 
 
 class SecurityServiceTable(tables.DataTable):
-    name = tables.Column("name",
-                         verbose_name=_("Name"),
-                         link="horizon:admin:shares:security_service_detail")
-    tenant = tables.Column("tenant_name", verbose_name=_("Project"))
+    name = tables.WrappingColumn(
+        "name", verbose_name=_("Name"),
+        link="horizon:admin:shares:security_service_detail")
+    project = tables.Column("project_name", verbose_name=_("Project"))
     dns_ip = tables.Column("dns_ip", verbose_name=_("DNS IP"))
     server = tables.Column("server", verbose_name=_("Server"))
     domain = tables.Column("domain", verbose_name=_("Domain"))
@@ -313,8 +377,11 @@ class SecurityServiceTable(tables.DataTable):
     class Meta(object):
         name = "security_services"
         verbose_name = _("Security Services")
-        table_actions = (DeleteSecurityService,)
-        row_actions = (DeleteSecurityService,)
+        table_actions = (
+            tables.NameFilterAction,
+            DeleteSecurityService)
+        row_actions = (
+            DeleteSecurityService,)
 
 
 class UpdateShareServerRow(tables.Row):
@@ -326,10 +393,10 @@ class UpdateShareServerRow(tables.Row):
 
 
 class NovaShareNetworkTable(tables.DataTable):
-    name = tables.Column("name",
-                         verbose_name=_("Name"),
-                         link="horizon:admin:shares:share_network_detail")
-    tenant = tables.Column("tenant_name", verbose_name=_("Project"))
+    name = tables.WrappingColumn(
+        "name", verbose_name=_("Name"),
+        link="horizon:admin:shares:share_network_detail")
+    project = tables.Column("project_name", verbose_name=_("Project"))
     nova_net = tables.Column("nova_net", verbose_name=_("Nova Net"))
     ip_version = tables.Column("ip_version", verbose_name=_("IP Version"))
     network_type = tables.Column("network_type",
@@ -346,15 +413,19 @@ class NovaShareNetworkTable(tables.DataTable):
     class Meta(object):
         name = "share_networks"
         verbose_name = _("Share Networks")
-        table_actions = (share_networks_tables.Delete, )
+        table_actions = (
+            tables.NameFilterAction,
+            share_networks_tables.Delete)
         row_class = share_networks_tables.UpdateRow
-        row_actions = (share_networks_tables.Delete, )
+        row_actions = (
+            share_networks_tables.Delete,)
 
 
 class NeutronShareNetworkTable(tables.DataTable):
-    name = tables.Column("name", verbose_name=_("Name"),
-                         link="horizon:project:shares:share_network_detail")
-    tenant = tables.Column("tenant_name", verbose_name=_("Project"))
+    name = tables.WrappingColumn(
+        "name", verbose_name=_("Name"),
+        link="horizon:project:shares:share_network_detail")
+    project = tables.Column("project_name", verbose_name=_("Project"))
     neutron_net = tables.Column("neutron_net", verbose_name=_("Neutron Net"))
     neutron_subnet = tables.Column(
         "neutron_subnet", verbose_name=_("Neutron Subnet"))
@@ -373,18 +444,12 @@ class NeutronShareNetworkTable(tables.DataTable):
     class Meta(object):
         name = "share_networks"
         verbose_name = _("Share Networks")
-        table_actions = (share_networks_tables.Delete, )
+        table_actions = (
+            tables.NameFilterAction,
+            share_networks_tables.Delete)
         row_class = share_networks_tables.UpdateRow
-        row_actions = (share_networks_tables.Delete, )
-
-
-class SharesServersFilterAction(tables.FilterAction):
-
-    def filter(self, table, shares, filter_string):
-        """Naive case-insensitive search."""
-        q = filter_string.lower()
-        return [share for share in shares
-                if q in share.name.lower()]
+        row_actions = (
+            share_networks_tables.Delete,)
 
 
 class ShareServerTable(tables.DataTable):
@@ -405,7 +470,7 @@ class ShareServerTable(tables.DataTable):
     uid = tables.Column("id", verbose_name=_("Id"),
                         link="horizon:admin:shares:share_server_detail")
     host = tables.Column("host", verbose_name=_("Host"))
-    tenant = tables.Column("tenant_name", verbose_name=_("Project"))
+    project = tables.Column("project_name", verbose_name=_("Project"))
 
     def get_share_server_link(share_serv):
         if hasattr(share_serv, 'share_network_id'):
@@ -432,6 +497,85 @@ class ShareServerTable(tables.DataTable):
         name = "share_servers"
         status_columns = ["status"]
         verbose_name = _("Share Server")
-        table_actions = (DeleteShareServer, SharesServersFilterAction)
+        table_actions = (
+            tables.NameFilterAction,
+            DeleteShareServer)
         row_class = UpdateShareServerRow
-        row_actions = (DeleteShareServer, )
+        row_actions = (
+            DeleteShareServer,)
+
+
+class ShareInstancesTable(tables.DataTable):
+    STATUS_CHOICES = (
+        ("available", True),
+        ("creating", None),
+        ("deleting", None),
+        ("error", False),
+        ("error_deleting", False),
+    )
+    STATUS_DISPLAY_CHOICES = (
+        ("available", u"Available"),
+        ("creating", u"Creating"),
+        ("deleting", u"Deleting"),
+        ("error", u"Error"),
+        ("error_deleting", u"Error deleting"),
+    )
+    uuid = tables.Column(
+        "id", verbose_name=_("ID"),
+        link="horizon:admin:shares:share_instance_detail")
+    host = tables.Column("host", verbose_name=_("Host"))
+    status = tables.Column("status",
+                           verbose_name=_("Status"),
+                           status=True,
+                           status_choices=STATUS_CHOICES,
+                           display_choices=STATUS_DISPLAY_CHOICES)
+    availability_zone = tables.Column(
+        "availability_zone", verbose_name=_("Availability Zone"))
+
+    class Meta(object):
+        name = "share_instances"
+        verbose_name = _("Share Instances")
+        status_columns = ("status", )
+        table_actions = (
+            tables.NameFilterAction,)
+        multi_select = False
+
+    def get_share_network_link(share_instance):
+        if getattr(share_instance, 'share_network_id', None):
+            return reverse("horizon:admin:shares:share_network_detail",
+                           args=(share_instance.share_network_id,))
+        else:
+            return None
+
+    def get_share_server_link(share_instance):
+        if getattr(share_instance, 'share_server_id', None):
+            return reverse("horizon:admin:shares:share_server_detail",
+                           args=(share_instance.share_server_id,))
+        else:
+            return None
+
+    def get_share_link(share_instance):
+        if getattr(share_instance, 'share_id', None):
+            return reverse("horizon:project:shares:detail",
+                           args=(share_instance.share_id,))
+        else:
+            return None
+
+    share_net_id = tables.Column(
+        "share_network_id",
+        verbose_name=_("Share Network"),
+        link=get_share_network_link)
+    share_server_id = tables.Column(
+        "share_server_id",
+        verbose_name=_("Share Server Id"),
+        link=get_share_server_link)
+    share_id = tables.Column(
+        "share_id",
+        verbose_name=_("Share ID"),
+        link=get_share_link)
+
+    def get_object_display(self, share_instance):
+        return six.text_type(share_instance.id)
+
+    def get_object_id(self, share_instance):
+        return six.text_type(share_instance.id)

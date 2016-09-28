@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
 # Copyright 2012 Nebula, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -38,6 +36,7 @@ class Create(tables.LinkAction):
     verbose_name = _("Create Share Network")
     url = "horizon:project:shares:create_share_network"
     classes = ("ajax-modal", "btn-create")
+    icon = "plus"
     policy_rules = (("share", "share_network:create"),)
 
 
@@ -89,8 +88,9 @@ class UpdateRow(tables.Row):
 
 
 class NovaShareNetworkTable(tables.DataTable):
-    name = tables.Column("name", verbose_name=_("Name"),
-                         link="horizon:project:shares:share_network_detail")
+    name = tables.WrappingColumn(
+        "name", verbose_name=_("Name"),
+        link="horizon:project:shares:share_network_detail")
     nova_net = tables.Column("nova_net", verbose_name=_("Nova Net"))
     ip_version = tables.Column("ip_version", verbose_name=_("IP Version"))
     network_type = tables.Column("network_type",
@@ -107,9 +107,14 @@ class NovaShareNetworkTable(tables.DataTable):
     class Meta(object):
         name = "share_networks"
         verbose_name = _("Share Networks")
-        table_actions = (Create, Delete, )
+        table_actions = (
+            tables.NameFilterAction,
+            Create,
+            Delete)
         row_class = UpdateRow
-        row_actions = (EditShareNetwork, Delete, )
+        row_actions = (
+            EditShareNetwork,
+            Delete)
 
 
 class NeutronShareNetworkTable(tables.DataTable):
@@ -125,8 +130,9 @@ class NeutronShareNetworkTable(tables.DataTable):
                                    u"Inactive")),
         ("ERROR", pgettext_lazy("Current status of share network", u"Error")),
     )
-    name = tables.Column("name", verbose_name=_("Name"),
-                         link="horizon:project:shares:share_network_detail")
+    name = tables.WrappingColumn(
+        "name", verbose_name=_("Name"),
+        link="horizon:project:shares:share_network_detail")
     neutron_net = tables.Column("neutron_net", verbose_name=_("Neutron Net"))
     neutron_subnet = tables.Column(
         "neutron_subnet", verbose_name=_("Neutron Subnet"))
@@ -150,7 +156,12 @@ class NeutronShareNetworkTable(tables.DataTable):
     class Meta(object):
         name = "share_networks"
         verbose_name = _("Share Networks")
-        table_actions = (Create, Delete, )
+        table_actions = (
+            tables.NameFilterAction,
+            Create,
+            Delete)
         # status_columns = ["status"]
         row_class = UpdateRow
-        row_actions = (EditShareNetwork, Delete, )
+        row_actions = (
+            EditShareNetwork,
+            Delete)
