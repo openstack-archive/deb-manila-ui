@@ -1,3 +1,17 @@
+manila-ui (2.5.0-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Fixed (build-)depends for this release.
+  * Using OpenStack's Gerrit as VCS URLs:
+    - Points .gitreview to packaging-deb project.
+    - Add .gitreview and egg-info to extend-diff-ignore.
+  * Remove Django 1.9 patches new useless.
+  * Add PYTHONPATH=. when running tests.
+  * Using manila_ui.tests.settings instead of manila_ui.test.settings for
+    running tests.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 28 Sep 2016 17:26:41 +0200
+
 manila-ui (2.1.0-2) unstable; urgency=medium
 
   [ Ondřej Nový ]

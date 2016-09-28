@@ -13,10 +13,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-"""
-Views for managing shares.
-"""
-
 from django.core.urlresolvers import reverse
 from django.forms import ValidationError  # noqa
 from django.template.defaultfilters import filesizeformat  # noqa
@@ -51,7 +47,7 @@ class CreateForm(forms.SelfHandlingForm):
 
     def __init__(self, request, *args, **kwargs):
         super(CreateForm, self).__init__(request, *args, **kwargs)
-        share_protos = ('NFS', 'CIFS', 'GlusterFS', 'HDFS', )
+        share_protos = ('NFS', 'CIFS', 'GlusterFS', 'HDFS', 'CephFS')
         share_networks = manila.share_network_list(request)
         share_types = manila.share_type_list(request)
         self.fields['share_type'].choices = (
@@ -312,7 +308,8 @@ class UpdateMetadataForm(forms.SelfHandlingForm):
 class AddRule(forms.SelfHandlingForm):
     access_type = forms.ChoiceField(
         label=_("Access Type"), required=True,
-        choices=(('ip', 'ip'), ('user', 'user'), ('cert', 'cert')))
+        choices=(('ip', 'ip'), ('user', 'user'), ('cert', 'cert'),
+                 ('cephx', 'cephx')))
     access_level = forms.ChoiceField(
         label=_("Access Level"), required=True,
         choices=(('rw', 'read-write'), ('ro', 'read-only'),))
@@ -378,9 +375,7 @@ class ExtendForm(forms.SelfHandlingForm):
     def handle(self, request, data):
         share_id = self.initial['share_id']
         try:
-            share = manila.share_get(self.request, share_id)
-            manila.share_extend(
-                request, share.id, data['new_size'])
+            manila.share_extend(request, share_id, data['new_size'])
             message = _('Extend share "%s"') % data['name']
             messages.success(request, message)
             return True

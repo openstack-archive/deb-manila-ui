@@ -32,7 +32,7 @@ def parse_str_meta(meta_s):
             # Key for unsetting
             key = string.strip('\"\'\ ')
             if len(key) not in range(1, 256):
-                msg = _("Key '%s' has inproper length.") % key
+                msg = _("Key '%s' has improper length.") % key
             elif " " in key:
                 msg = _("Key can not contain spaces. See string '%s'.") % key
             elif key not in unset_list:
@@ -82,3 +82,12 @@ def metadata_to_str(metadata):
     if len(metadata.keys()) > meta_visible_limit:
         meta_str += '...'
     return meta_str
+
+
+def get_nice_security_service_type(security_service):
+    type_mapping = {
+        'ldap': 'LDAP',
+        'active_directory': 'Active Directory',
+        'kerberos': 'Kerberos',
+    }
+    return type_mapping.get(security_service.type, security_service.type)

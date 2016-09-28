@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from django.conf import settings
 from django.forms import ValidationError  # noqa
 from django.utils.translation import ugettext_lazy as _
 from oslo_utils import strutils
@@ -36,6 +37,139 @@ ST_EXTRA_SPECS_FORM_ATTRS = {
 }
 
 
+class MigrationStart(forms.SelfHandlingForm):
+    name = forms.CharField(
+        label=_("Share Name"), required=False,
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}))
+    share_id = forms.CharField(
+        label=_("ID"), required=False,
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}))
+    host = forms.CharField(
+        max_length=255, label=_("Host to migrate share"),
+        help_text=_("Destination host where share will be migrated to. Use the"
+                    " format 'host@backend#pool'."))
+    force_host_assisted_migration = forms.BooleanField(
+        label=_("Force Host Assisted Migration"),
+        required=False, initial=False,
+        help_text=("Defines whether the migration of this share should skip "
+                   "the attempt to be assisted by a storage vendor backend. "
+                   "This will force the use of the Data Service to perform "
+                   "migration."))
+    nondisruptive = forms.BooleanField(
+        label=_("Non-disruptive"),
+        required=False, initial=False,
+        help_text=("Defines whether the migration of this share should be "
+                   "performed only if it is non-disruptive If set so, this "
+                   "will prevent the use of the Data Service for migration."))
+    writable = forms.BooleanField(
+        label=_("Writable"), required=False, initial=True,
+        help_text=("Defines whether this share should remain writable during "
+                   "migration. If set so, this will prevent the use of the "
+                   "Data Service for migration."))
+    preserve_metadata = forms.BooleanField(
+        label=_("Preserve Metadata"), required=False, initial=True,
+        help_text=("Defines whether this share should have all its file "
+                   "metadata preserved during migration. If set so, this will "
+                   "prevent the use of the Data Service for migration."))
+    new_share_network_id = forms.CharField(
+        max_length=255, label=_("ID of share network to be set in migrated "
+                                "share"), required=False,
+        help_text=_("Input the ID of the share network where the share should"
+                    " be migrated to."))
+    new_share_type_id = forms.CharField(
+        max_length=255, label=_("ID of share type to be set in migrating "
+                                "share"), required=False,
+        help_text=_("Input the ID of the share type which the migrating share"
+                    " will be set to."))
+
+    def handle(self, request, data):
+        share_name = _get_id_if_name_empty(data)
+        try:
+            manila.migration_start(
+                request, self.initial['share_id'],
+                force_host_assisted_migration=(
+                    data['force_host_assisted_migration']),
+                writable=data['writable'],
+                preserve_metadata=data['preserve_metadata'],
+                nondisruptive=data['nondisruptive'],
+                dest_host=data['host'],
+                new_share_network_id=data['new_share_network_id'],
+                new_share_type_id=data['new_share_type_id'])
+
+            messages.success(
+                request,
+                _('Successfully sent the request to migrate share: %s.')
+                % share_name)
+            return True
+        except Exception:
+            exceptions.handle(request, _("Unable to migrate share %s.")
+                              % share_name)
+        return False
+
+
+class MigrationForms(forms.SelfHandlingForm):
+    name = forms.CharField(
+        label=_("Share Name"), required=False,
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}))
+    share_id = forms.CharField(
+        label=_("ID"), required=False,
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}))
+
+
+class MigrationComplete(MigrationForms):
+
+    def handle(self, request, data):
+        share_name = _get_id_if_name_empty(data)
+        try:
+            manila.migration_complete(request, self.initial['share_id'])
+            messages.success(
+                request,
+                _('Successfully sent the request to complete migration of '
+                  ' share: %s.') % share_name)
+            return True
+        except Exception:
+            exceptions.handle(request, _("Unable to complete migration "
+                                         "of share %s.") % share_name)
+        return False
+
+
+class MigrationGetProgress(MigrationForms):
+
+    def handle(self, request, data):
+        share_name = _get_id_if_name_empty(data)
+        try:
+            result = manila.migration_get_progress(request,
+                                                   self.initial['share_id'])
+            progress = result[1]
+            messages.success(
+                request,
+                _('Migration of share %(name)s is at %(progress)s percent.') %
+                {'name': share_name, 'progress': progress['total_progress']})
+            return True
+        except Exception:
+            exceptions.handle(request, _("Unable to obtain progress of "
+                                         "migration of share %s at this "
+                                         "moment.") % share_name)
+        return False
+
+
+class MigrationCancel(MigrationForms):
+
+    def handle(self, request, data):
+        share_name = _get_id_if_name_empty(data)
+        try:
+            manila.migration_cancel(request, self.initial['share_id'])
+            messages.success(
+                request,
+                _('Successfully sent the request to cancel migration of '
+                  ' share: %s.') % share_name)
+            return True
+        except Exception:
+            exceptions.handle(request, _("Unable to cancel migration of share"
+                                         " %s at this moment.") % share_name)
+        return False
+
+
 class ManageShare(forms.SelfHandlingForm):
     name = forms.CharField(
         max_length=255, label=_("Share Name"), required=False,
@@ -56,7 +190,7 @@ class ManageShare(forms.SelfHandlingForm):
     protocol = forms.ChoiceField(
         label=_("Share Protocol"), required=True,
         choices=(('NFS', 'NFS'), ('CIFS', 'CIFS'), ('GlusterFS', 'GlusterFS'),
-                 ('HDFS', 'HDFS')))
+                 ('HDFS', 'HDFS'), ('CephFS', 'CephFS')))
     share_type = forms.ChoiceField(label=_("Share Type"), required=True)
 
     driver_options = forms.CharField(
@@ -65,6 +199,9 @@ class ManageShare(forms.SelfHandlingForm):
         help_text=_("key=value pairs per line can be set"),
         widget=forms.Textarea(
             attrs={'class': 'modal-body-fixed-width', 'rows': 2}))
+    is_public = forms.BooleanField(
+        label=_("Public"), required=False, initial=False,
+        help_text=("Defines whether this share is available for all or not."))
 
     def __init__(self, request, *args, **kwargs):
         super(ManageShare, self).__init__(request, *args, **kwargs)
@@ -106,7 +243,8 @@ class ManageShare(forms.SelfHandlingForm):
                 driver_options=driver_options,
                 share_type=data['share_type'],
                 name=data['name'],
-                description=data['description'])
+                description=data['description'],
+                is_public=data['is_public'])
 
             share_name = data.get('name', data.get('id'))
             messages.success(
@@ -157,6 +295,15 @@ class CreateShareType(forms.SelfHandlingForm):
                    "or not. List of allowed tenants should be set "
                    "separately."))
 
+    def __init__(self, *args, **kwargs):
+        super(CreateShareType, self).__init__(*args, **kwargs)
+
+        manila_features = getattr(settings, 'OPENSTACK_MANILA_FEATURES', {})
+        self.enable_public_share_type_creation = manila_features.get(
+            'enable_public_share_type_creation', True)
+        if not self.enable_public_share_type_creation:
+            self.fields.pop('is_public')
+
     def handle(self, request, data):
         try:
             spec_dhss = data['spec_driver_handles_share_servers'].lower()
@@ -173,14 +320,11 @@ class CreateShareType(forms.SelfHandlingForm):
                 msg = _("Expected only pairs of key=value.")
                 raise ValidationError(message=msg)
 
+            is_public = (self.enable_public_share_type_creation
+                         and data["is_public"])
             share_type = manila.share_type_create(
-                request, data["name"], spec_dhss, data["is_public"])
+                request, data["name"], spec_dhss, is_public=is_public)
             if set_dict:
-                # NOTE(vponomaryov): remove following when
-                # bug #1435819 is fixed.
-                if "driver_handles_share_servers" not in set_dict.keys():
-                    set_dict["driver_handles_share_servers"] = spec_dhss
-
                 manila.share_type_set_extra_specs(
                     request, share_type.id, set_dict)
 
@@ -312,3 +456,12 @@ class CreateShareNetworkForm(forms.SelfHandlingForm):
             exceptions.handle(request,
                               _('Unable to create share network.'))
             return False
+
+
+def _get_id_if_name_empty(data):
+    result = data.get('name', None)
+    if not result:
+        result = data.get('id')
+    if not result:
+        result = ''
+    return result
