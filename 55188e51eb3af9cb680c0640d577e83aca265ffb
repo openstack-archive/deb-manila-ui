@@ -1,0 +1,10 @@
+Code-Review+1: Tom Barron <tpb@dyncloud.net>
+Code-Review+2: Ben Swartzlander <ben@swartzlander.org>
+Code-Review+2: Mark Sturdevant <mark.sturdevant@hpe.com>
+Workflow+1: Mark Sturdevant <mark.sturdevant@hpe.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 29 Sep 2016 17:00:56 +0000
+Reviewed-on: https://review.openstack.org/378971
+Project: openstack/deb-manila-ui
+Branch: refs/heads/stable/newton
