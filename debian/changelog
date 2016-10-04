@@ -1,6 +1,6 @@
 manila-ui (2.5.0-2) unstable; urgency=medium
 
-  * Uploading to unstable.
+  * Uploading to unstable (Closes: #838017).
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 04 Oct 2016 10:06:45 +0200
 
