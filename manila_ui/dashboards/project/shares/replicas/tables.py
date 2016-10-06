@@ -45,8 +45,8 @@ class CreateReplica(tables.LinkAction):
     policy_rules = (("share", "share:create_replica"),)
 
     def allowed(self, request, datum=None):
-        return len(manila.share_valid_availability_zones_for_new_replica(
-            request, self.table.kwargs['share_id'])) != 0
+        share = manila.share_get(request, self.table.kwargs['share_id'])
+        return share.replication_type is not None
 
     def get_policy_target(self, request, datum=None):
         return {"project_id": getattr(datum, "project_id", None)}
@@ -90,8 +90,18 @@ class DeleteReplica(tables.DeleteAction):
 
     def allowed(self, request, replica=None):
         if replica:
-            return replica.status in DELETABLE_STATUSES
-        return True
+            share = manila.share_get(request, replica.share_id)
+            replicas = manila.share_replica_list(request, replica.share_id)
+            if share.replication_type is None:
+                return False
+            elif (share.replication_type is 'writable' and
+                  replica.status in DELETABLE_STATUSES and
+                  len(replicas) > 1) or (
+                      share.replication_type in ('dr', 'readable') and
+                      replica.status in DELETABLE_STATUSES and
+                      replica.replica_state != 'active'):
+                return True
+        return False
 
     def single(self, data_table, request, object_id):
         try:
@@ -157,7 +167,7 @@ class ReplicasTable(tables.DataTable):
         row_class = UpdateReplicaRow
         table_actions = (
             CreateReplica,
-            DeleteReplica)
+        )
         row_actions = (
             SetReplicaAsActive,
             DeleteReplica)
