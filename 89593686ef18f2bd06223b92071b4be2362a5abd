@@ -1,0 +1,10 @@
+Code-Review+2: Tom Barron <tpb@dyncloud.net>
+Code-Review+1: Marc Koderer <marc@koderer.com>
+Code-Review+2: xing-yang <xing.yang@emc.com>
+Workflow+1: Tom Barron <tpb@dyncloud.net>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 06 Oct 2016 20:18:24 +0000
+Reviewed-on: https://review.openstack.org/380017
+Project: openstack/deb-manila-ui
+Branch: refs/heads/stable/mitaka
