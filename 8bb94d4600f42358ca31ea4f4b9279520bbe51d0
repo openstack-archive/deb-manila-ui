@@ -1,0 +1,14 @@
+Code-Review+2: Ben Swartzlander <ben@swartzlander.org>
+Code-Review+2: Valeriy Ponomaryov <vponomaryov@mirantis.com>
+Code-Review+1: Tatiana Ovchinnikova <t.v.ovtchinnikova@gmail.com>
+Code-Review+2: Rodrigo Barbieri <rodrigo.barbieri2010@gmail.com>
+Code-Review+1: venkatamahesh <Venkata.Kotha@infinite.com>
+Code-Review+2: xing-yang <xing.yang@emc.com>
+Code-Review+1: Victoria Martinez de la Cruz <victoria@redhat.com>
+Workflow+1: Valeriy Ponomaryov <vponomaryov@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 10 Oct 2016 12:37:41 +0000
+Reviewed-on: https://review.openstack.org/370205
+Project: openstack/deb-manila-ui
+Branch: refs/heads/stable/newton
