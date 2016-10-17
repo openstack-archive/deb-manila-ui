@@ -1,0 +1,10 @@
+Code-Review+2: Ben Swartzlander <ben@swartzlander.org>
+Code-Review+1: Goutham Pacha Ravi <gouthampravi@gmail.com>
+Code-Review+2: Tom Barron <tpb@dyncloud.net>
+Workflow+1: Tom Barron <tpb@dyncloud.net>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Sat, 15 Oct 2016 01:44:13 +0000
+Reviewed-on: https://review.openstack.org/379994
+Project: openstack/deb-manila-ui
+Branch: refs/heads/stable/newton
