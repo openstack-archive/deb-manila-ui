@@ -1,0 +1,11 @@
+Code-Review+2: xing-yang <xing.yang@emc.com>
+Code-Review+1: Victoria Martinez de la Cruz <victoria@redhat.com>
+Code-Review+1: weezer su <weezer.su@rackspace.com>
+Code-Review+2: Tatiana Ovchinnikova <t.v.ovtchinnikova@gmail.com>
+Workflow+1: Tatiana Ovchinnikova <t.v.ovtchinnikova@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 02 Dec 2016 18:38:01 +0000
+Reviewed-on: https://review.openstack.org/406247
+Project: openstack/deb-manila-ui
+Branch: refs/heads/master
