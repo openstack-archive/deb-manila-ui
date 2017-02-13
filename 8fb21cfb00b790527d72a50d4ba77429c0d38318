@@ -1,0 +1,9 @@
+Code-Review+2: Goutham Pacha Ravi <gouthampravi@gmail.com>
+Code-Review+2: Tatiana Ovchinnikova <t.v.ovtchinnikova@gmail.com>
+Workflow+1: Tatiana Ovchinnikova <t.v.ovtchinnikova@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 13 Feb 2017 07:51:15 +0000
+Reviewed-on: https://review.openstack.org/432577
+Project: openstack/deb-manila-ui
+Branch: refs/heads/stable/ocata
