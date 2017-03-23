@@ -1,0 +1,8 @@
+Code-Review+2: Ben Swartzlander <ben@swartzlander.org>
+Workflow+1: Ben Swartzlander <ben@swartzlander.org>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 21 Mar 2017 14:27:12 +0000
+Reviewed-on: https://review.openstack.org/447666
+Project: openstack/deb-manila-ui
+Branch: refs/heads/stable/ocata
