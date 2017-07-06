@@ -1,7 +1,7 @@
 [run]
 branch = True
 source = manila_ui
-omit = manila_ui/enabled*,manila_ui/test*
+omit = manila_ui/enabled*
 
 [report]
 precision = 2
