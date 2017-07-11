@@ -1,0 +1,8 @@
+Code-Review+2: Ben Swartzlander <ben@swartzlander.org>
+Workflow+1: Ben Swartzlander <ben@swartzlander.org>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 11 Jul 2017 19:42:25 +0000
+Reviewed-on: https://review.openstack.org/482572
+Project: openstack/deb-manila-ui
+Branch: refs/heads/stable/newton
