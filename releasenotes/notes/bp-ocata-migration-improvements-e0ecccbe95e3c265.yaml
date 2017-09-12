@@ -1,6 +1,0 @@
----
-features:
-  - Added preserve-snapshots option to share migration.
-fixes:
-  - Updated descriptions of share migration parameters.
-
